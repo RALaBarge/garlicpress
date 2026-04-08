@@ -20,6 +20,12 @@ This directory contains all evaluation data, benchmarks, and analysis for garlic
   - Production-readiness verdict
   - 6-month hardening roadmap
   
+- **[TRINITY_ANALYSIS.md](TRINITY_ANALYSIS.md)** — Trinity Large Thinking deep dive
+  - Severity recalibration (3 findings downgraded CRITICAL → HIGH)
+  - PR-ready fix blueprints for top 5 issues
+  - 7 missed critical patterns (crypto, concurrency, dependencies)
+  - Architectural assessment + refactoring roadmap
+  
 - **[critical_evaluations.json](critical_evaluations.json)** — Raw model responses (23 KB)
   - Token counts and costs per model
   - Structured consensus/disagreement data
