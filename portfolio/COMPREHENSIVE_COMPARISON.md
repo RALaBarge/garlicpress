@@ -6,7 +6,7 @@
 
 | Repo | Language | Files | Llama 70B | Deepseek v3.2 | Qwen 3.6+ |
 |------|----------|-------|----------|---------------|-----------|
-| **andsh** | C | 4 | 0/0/0/0 | 0/3/4/1 | — |
+| **andsh** | C | 4 | 0/0/0/0 | 0/3/4/1 | 0/2/2/1 |
 | **lua-projects** | Lua | 9 | 1/2/2/1 | 4/16/12/7 | 0/0/0/0 |
 | **elixir-portal** | Elixir | 5 | 1/1/3/2 | 0/2/1/2 | — |
 | **haskell-examples** | Haskell | 12 | 1/5/9/0 | 0/3/0/0 | — |
@@ -42,10 +42,10 @@
 | Model | Findings | Assessment |
 |-------|----------|-----------|
 | **Llama** | 0 | Correct—this is clean C code |
-| **Deepseek** | 8 (3H/4M/1L) | False positives—flagged practices that are intentional |
-| **Qwen** | — | Not evaluated |
+| **Deepseek** | 8 (0C/3H/4M/1L) | False positives—flagged practices that are intentional |
+| **Qwen** | 5 (0C/2H/2M/1L) | Similar to Deepseek; moderate noise |
 
-**Verdict:** Llama's zero is correct. Deepseek over-analyzed. andsh is a minimal, well-written shell implementation.
+**Verdict:** Llama's zero is correct. Deepseek and Qwen both over-analyze this clean code. andsh is a minimal, well-written shell implementation. **Consensus:** All three agree there are no critical issues.
 
 #### lua-projects (Lua, 9 files)
 | Model | Findings | Assessment |
