@@ -1,49 +1,49 @@
-# Model Comparison: Llama 3 70B vs Deepseek v3.2
+# Model Comparison: llama3.2:3b vs deepseek-chat
 
-**Self-Evaluation of garlicpress across two different LLM backends**
+**⚠️ CORRECTION:** Historical version claimed "Llama 70B" — wire.jsonl ground truth (April 8, 2026) shows **llama3.2:3b** (3-billion param, not 70B). This page corrected to match actual data.
 
 ## Overview
 
 garlicpress ran its own code analyzer twice:
-1. **Llama 3 70B Instruct** (local via BeigeBox)
-2. **Deepseek v3.2** (via OpenRouter API)
+1. **llama3.2:3b** (local via Ollama/BeigeBox)
+2. **deepseek-chat** (via OpenRouter API)
 
 Same code, same pipeline, different LLM brains = different findings. This comparison reveals how model choice affects code review quality.
 
 ## Finding Counts
 
-| Severity | Llama 70B | Deepseek v3.2 | Difference |
+| Severity | llama3.2:3b | deepseek-chat | Difference |
 |----------|-----------|---------------|-----------|
-| **Critical** | 8 | 0 | Llama +8 |
-| **High** | 3 | 5 | Deepseek +2 |
-| **Medium** | 6 | 22 | Deepseek +16 |
-| **Low** | 0 | 30 | Deepseek +30 |
-| **Info** | 0 | 1 | Deepseek +1 |
+| **Critical** | 8 | 0 | llama3.2:3b +8 |
+| **High** | 3 | 5 | deepseek-chat +2 |
+| **Medium** | 6 | 22 | deepseek-chat +16 |
+| **Low** | 0 | 30 | deepseek-chat +30 |
+| **Info** | 0 | 1 | deepseek-chat +1 |
 | **Total** | **17** | **58** | |
 
 ## Cross-File Contradictions
 
 | Model | Count |
 |-------|-------|
-| **Llama 70B** | 4 |
-| **Deepseek v3.2** | 8 |
+| **llama3.2:3b** | 4 |
+| **deepseek-chat** | 8 |
 
 ## Key Insight: Severity Calibration
 
-**Llama** leans critical/high (8 critical + 3 high = 11/17 = 65% severe)
+**llama3.2:3b** leans critical/high (8 critical + 3 high = 11/17 = 65% severe)
 
-**Deepseek** leans medium/low (22 medium + 30 low = 52/58 = 90% minor)
+**deepseek-chat** leans medium/low (22 medium + 30 low = 52/58 = 90% minor)
 
 ### What This Means
 
-- **Llama**: Alarmist. Sees systemic failures, treats edge cases as blockers.
-- **Deepseek**: Granular. Catches lots of small issues but dilutes urgency.
+- **llama3.2:3b**: Alarmist. Sees systemic failures, treats edge cases as blockers.
+- **deepseek-chat**: Granular. Catches lots of small issues but dilutes urgency.
 
-For production code review, **Llama's severity bias is more actionable** (tells you what to fix first). **Deepseek's volume is more comprehensive** (catches papercuts).
+For production code review, **llama3.2:3b's severity bias is more actionable** (tells you what to fix first). **deepseek-chat's volume is more comprehensive** (catches papercuts).
 
 ## Critical Issues: Llama Only
 
-Llama flagged these as CRITICAL; Deepseek found them at lower severity or missed them:
+llama3.2:3b flagged these as CRITICAL; deepseek-chat found them at lower severity or missed them:
 
 1. **Schema validation (severity parameter)** — Llama: CRITICAL, Deepseek: not highlighted
 2. **LLMClient stability assumptions** — Llama: CRITICAL (2x), Deepseek: MEDIUM
