@@ -1,0 +1,116 @@
+{
+  "file": "tests/test_skeleton.py",
+  "summary": "Unit tests for the skeleton generation module. Tests functionality for extracting Python signatures and imports, collecting source files, and building project skeleton documentation without making external API calls.",
+  "findings": [
+    {
+      "finding_id": "tests-001",
+      "severity": "medium",
+      "type": "missing_error_path",
+      "location": "test_python_signatures_function:L20",
+      "description": "The test assumes _python_signatures() returns a list of strings but doesn't handle cases where the function could raise an exception (e.g., syntax error in source file, file not found). If the function under test raises, the test will fail with an unhelpful traceback rather than a proper assertion.",
+      "evidence": "def test_python_signatures_function(tmp_path):\n    p = _write(tmp_path, \"foo.py\", \"\"\"\\\n        def hello(name: str) -> str:\n            return f\"hi {name}\"\n        \"\"\")\n    sigs = _python_signatures(p)\n    assert any(\"hello\" in s for s in sigs)",
+      "traceability": {
+        "file": "tests/test_skeleton.py",
+        "line": 20,
+        "git_sha": null
+      }
+    },
+    {
+      "finding_id": "tests-002",
+      "severity": "low",
+      "type": "logic_error",
+      "location": "test_collect_source_files:L45",
+      "description": "Test expects collect_source_files() to skip '__pycache__' directory, but doesn't verify the implementation actually filters it out. The test creates a '__pycache__' directory but also has a separate 'skip.txt' file to test filtering. However, the test might pass if implementation filters by extension but not by directory name.",
+      "evidence": "skip_dir = tmp_path / \"__pycache__\"\nskip_dir.mkdir()\n(skip_dir / \"c.py\").write_text(\"# cached\")\n\nfiles = collect_source_files(tmp_path)\nnames = {f.name for f in files}\nassert \"c.py\" not in names",
+      "traceability": {
+        "file": "tests/test_skeleton.py",
+        "line": 45,
+        "git_sha": null
+      }
+    },
+    {
+      "finding_id": "tests-003",
+      "severity": "medium",
+      "type": "interface_mismatch",
+      "location": "test_build_skeleton:L55",
+      "description": "Test calls build_skeleton with (tmp_path, files) but skeleton signature shows build_skeleton(repo_root: Path, source_files: list[Path]) -> str. The test assumes it returns a string containing specific markers, but doesn't verify the structure matches expectations beyond basic substring checks.",
+      "evidence": "def test_build_skeleton(tmp_path):\n    _write(tmp_path, \"mod.py\", \"\"\"\\\n        def greet(name: str) -> str:\n            return name\n        \"\"\")\n    files = collect_source_files(tmp_path)\n    skeleton = build_skeleton(tmp_path, files)\n    assert \"## API Surface\" in skeleton\n    assert \"greet\" in skeleton\n    assert \"## File Tree\" in skeleton",
+      "traceability": {
+        "file": "tests/test_skeleton.py",
+        "line": 55,
+        "git_sha": null
+      }
+    },
+    {
+      "finding_id": "tests-004",
+      "severity": "low",
+      "type": "missing_validation",
+      "location": "_write:L9",
+      "description": "Helper function _write() uses textwrap.dedent but doesn't handle cases where content might have inconsistent indentation or empty strings. If dedent produces an empty string, the file will be created empty, which might cause unexpected behavior in tests.",
+      "evidence": "def _write(tmp_path: Path, name: str, content: str) -> Path:\n    p = tmp_path / name\n    p.write_text(textwrap.dedent(content), encoding=\"utf-8\")\n    return p",
+      "traceability": {
+        "file": "tests/test_skeleton.py",
+        "line": 9,
+        "git_sha": null
+      }
+    }
+  ],
+  "interfaces_exported": [
+    "_write(tmp_path: Path, name: str, content: str) -> Path",
+    "test_python_signatures_function(tmp_path)",
+    "test_python_signatures_class_and_method(tmp_path)",
+    "test_python_imports(tmp_path)",
+    "test_collect_source_files(tmp_path)",
+    "test_build_skeleton(tmp_path)"
+  ],
+  "interfaces_consumed": [
+    "textwrap.dedent",
+    "pathlib.Path",
+    "pytest.tmp_path",
+    "garlicpress.skeleton._python_signatures",
+    "garlicpress.skeleton._python_imports",
+    "garlicpress.skeleton.build_skeleton",
+    "garlicpress.skeleton.collect_source_files"
+  ],
+  "explicit_requirements": [
+    "Tests should not require API calls (as stated in docstring)",
+    "Function signatures should be extracted from Python files",
+    "Imports should be extracted from Python files",
+    "Source file collection should skip non-source files and __pycache__",
+    "Skeleton should contain ## API Surface, ## File Tree, and function names"
+  ],
+  "implicit_assumptions": [
+    {
+      "assumption": "_python_signatures() never raises exceptions for valid Python syntax files",
+      "confidence": "high",
+      "risk": "Tests will crash with unhelpful traceback instead of proper test failure if function raises (e.g., on syntax errors or file permissions)"
+    },
+    {
+      "assumption": "collect_source_files() filters out __pycache__ directories recursively",
+      "confidence": "medium",
+      "risk": "Test might pass even if implementation only filters top-level __pycache__, leaving nested cache directories included"
+    },
+    {
+      "assumption": "build_skeleton() returns a string with specific markdown sections in a predictable order",
+      "confidence": "medium",
+      "risk": "If skeleton format changes (e.g., different headers), tests will fail even if functionality is correct"
+    },
+    {
+      "assumption": "All test files are written with UTF-8 encoding and are readable",
+      "confidence": "high",
+      "risk": "If file system encoding issues occur (e.g., on systems with different default encoding), tests will fail with Unicode errors"
+    },
+    {
+      "assumption": "tmp_path fixture provides a clean, writable directory for each test",
+      "confidence": "high",
+      "risk": "If tmp_path has permission issues or is not cleaned properly, tests could interfere with each other"
+    }
+  ],
+  "stable_since": "2026-04-07",
+  "dependencies_changed_since": [],
+  "cross_file_flags": [
+    "Test assumes _python_signatures() handles various Python syntax constructs - verify implementation in skeleton.py handles edge cases",
+    "Test assumes _python_imports() extracts both 'import x' and 'from y import z' statements - verify implementation in skeleton.py",
+    "Test assumes collect_source_files() filters by file extension and directory name - verify implementation logic matches test expectations"
+  ]
+}

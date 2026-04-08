@@ -1,0 +1,82 @@
+{
+  "file": "tests/test_schema.py",
+  "summary": "Basic schema round-trip tests — no API calls required.",
+  "findings": [
+    {
+      "finding_id": "test_schema_minimal_report_roundtrip-001",
+      "severity": "low",
+      "type": "interface_mismatch",
+      "location": "FileFindingsReport.model_validate(data):",
+      "description": "The `FileFindingsReport` class seems to have a lot of optional parameters that are not being used in the test.",
+      "evidence": "report = FileFindingsReport.model_validate(data)",
+      "traceability": {
+        "file": "tests/test_schema.py",
+        "line": 14,
+        "git_sha": null
+      }
+    },
+    {
+      "finding_id": "test_schema_report_with_finding-002",
+      "severity": "medium",
+      "type": "missing_validation",
+      "location": "data['findings'] = [...]",
+      "description": "The `findings` parameter is a list of dictionaries, but its length is not validated.",
+      "evidence": "data['findings'] = [...]",
+      "traceability": {
+        "file": "tests/test_schema.py",
+        "line": 18,
+        "git_sha": null
+      }
+    },
+    {
+      "finding_id": "test_schema_implicit_assumption_roundtrip-003",
+      "severity": "medium",
+      "type": "implicit_assumption_violated",
+      "location": "data['implicit_assumptions'] = [...]",
+      "description": "The `implicit_assumptions` parameter is a list of dictionaries, but its contents are not validated.",
+      "evidence": "data['implicit_assumptions'] = [...]",
+      "traceability": {
+        "file": "tests/test_schema.py",
+        "line": 22,
+        "git_sha": null
+      }
+    },
+    {
+      "finding_id": "test_schema_invalid_severity_raises-004",
+      "severity": "critical",
+      "type": "security",
+      "location": "FileFindingsReport.model_validate(data):",
+      "description": "The `model_validate` method does not handle invalid `severity` values.",
+      "evidence": "with pytest.raises(Exception): FileFindingsReport.model_validate(data)",
+      "traceability": {
+        "file": "tests/test_schema.py",
+        "line": 26,
+        "git_sha": null
+      }
+    }
+  ],
+  "interfaces_exported": [
+    "FileFindingsReport.model_validate(data):",
+    "FileFindingsReport.model_dump_json():"
+  ],
+  "interfaces_consumed": [
+    "LLMClient.complete(model, max_tokens, system, messages):",
+    "Config.prompt(name):"
+  ],
+  "explicit_requirements": [
+    "The `findings` parameter must be a list of dictionaries with specific keys and values.",
+    "The `implicit_assumptions` parameter must be a list of dictionaries with specific keys and values."
+  ],
+  "implicit_assumptions": [
+    {
+      "assumption": "The `implicit_assumptions` parameter is silently assumed to be valid.",
+      "confidence": "medium",
+      "risk": "Error if invalid assumption is used."
+    }
+  ],
+  "stable_since": "2026-04-07",
+  "dependencies_changed_since": [],
+  "cross_file_flags": [
+    "Note: The `FileFindingsReport` class seems to be relying on other modules without checking their stability."
+  ]
+}

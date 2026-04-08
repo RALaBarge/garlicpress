@@ -1,0 +1,163 @@
+{
+  "file": "garlicpress/config.py",
+  "summary": "Defines the Config dataclass holding runtime configuration parameters for the garlicpress code review tool, including model selection, concurrency limits, token limits, retry settings, spec files, git diff options, and prompt template loading.",
+  "findings": [
+    {
+      "finding_id": "config-001",
+      "severity": "medium",
+      "type": "missing_error_path",
+      "location": "Config.prompt:LNNN",
+      "description": "The prompt method assumes the prompt file exists and is readable, raising an unhandled FileNotFoundError or OSError if the file is missing or inaccessible.",
+      "evidence": "def prompt(self, name: str) -> str:\n        \"\"\"Load a prompt template by name (e.g. 'map', 'reduce', 'swap').\"\"\"\n        if self.prompts_dir:\n            path = self.prompts_dir / f\"{name}.md\"\n        else:\n            path = Path(__file__).parent / \"prompts\" / f\"{name}.md\"\n        return path.read_text(encoding=\"utf-8\")",
+      "traceability": {
+        "file": "garlicpress/config.py",
+        "line": null,
+        "git_sha": null
+      }
+    },
+    {
+      "finding_id": "config-002",
+      "severity": "low",
+      "type": "missing_validation",
+      "location": "Config.prompt:LNNN",
+      "description": "The prompt method does not validate the 'name' parameter, allowing directory traversal via '../' or other unsafe input that could lead to reading arbitrary files.",
+      "evidence": "def prompt(self, name: str) -> str:\n        \"\"\"Load a prompt template by name (e.g. 'map', 'reduce', 'swap').\"\"\"\n        if self.prompts_dir:\n            path = self.prompts_dir / f\"{name}.md\"\n        else:\n            path = Path(__file__).parent / \"prompts\" / f\"{name}.md\"\n        return path.read_text(encoding=\"utf-8\")",
+      "traceability": {
+        "file": "garlicpress/config.py",
+        "line": null,
+        "git_sha": null
+      }
+    },
+    {
+      "finding_id": "config-003",
+      "severity": "low",
+      "type": "missing_validation",
+      "location": "Config.__init__:LNNN",
+      "description": "No validation is performed on integer fields (concurrency, map_max_tokens, reduce_max_tokens, swap_max_tokens, max_retries), allowing negative or zero values that may cause runtime failures.",
+      "evidence": "concurrency: int = 5\n    map_max_tokens: int = 4096\n    reduce_max_tokens: int = 4096\n    swap_max_tokens: int = 4096\n    max_retries: int = 2",
+      "traceability": {
+        "file": "garlicpress/config.py",
+        "line": null,
+        "git_sha": null
+      }
+    },
+    {
+      "finding_id": "config-004",
+      "severity": "low",
+      "type": "missing_validation",
+      "location": "Config.__init__:LNNN",
+      "description": "The prompts_dir field is not validated to ensure it's a directory; if set to a file path, path.read_text() will fail with confusing error.",
+      "evidence": "prompts_dir: Path | None = None",
+      "traceability": {
+        "file": "garlicpress/config.py",
+        "line": null,
+        "git_sha": null
+      }
+    },
+    {
+      "finding_id": "config-005",
+      "severity": "low",
+      "type": "logic_error",
+      "location": "Config.__init__:LNNN",
+      "description": "The default 'base_ref' is 'HEAD~1', which assumes a git repository with at least one commit. In a fresh repo with a single commit, this reference may not exist.",
+      "evidence": "base_ref: str = \"HEAD~1\"",
+      "traceability": {
+        "file": "garlicpress/config.py",
+        "line": null,
+        "git_sha": null
+      }
+    },
+    {
+      "finding_id": "config-006",
+      "severity": "low",
+      "type": "security",
+      "location": "Config.__init__:LNNN",
+      "description": "The spec_files list accepts arbitrary strings; if these are used to construct file paths without validation, could lead to path traversal.",
+      "evidence": "spec_files: list[str] = field(default_factory=list)",
+      "traceability": {
+        "file": "garlicpress/config.py",
+        "line": null,
+        "git_sha": null
+      }
+    },
+    {
+      "finding_id": "config-007",
+      "severity": "low",
+      "type": "implicit_assumption_violated",
+      "location": "Config.prompt:LNNN",
+      "description": "Assumes the prompt file is encoded in UTF-8; if a prompt file has a different encoding, reading will raise a UnicodeDecodeError.",
+      "evidence": "return path.read_text(encoding=\"utf-8\")",
+      "traceability": {
+        "file": "garlicpress/config.py",
+        "line": null,
+        "git_sha": null
+      }
+    }
+  ],
+  "interfaces_exported": [
+    "Config() -> None",
+    "Config.prompt(name: str) -> str"
+  ],
+  "interfaces_consumed": [],
+  "explicit_requirements": [
+    "Model used for map agents (many calls, cost-sensitive)",
+    "Model used for reduce and swap (fewer calls, higher stakes)",
+    "Max parallel map workers",
+    "Max tokens per map agent response",
+    "Retry on JSON parse failure",
+    "Spec files fed to Agent B (paths relative to repo root or absolute)",
+    "Only review files changed since this git ref",
+    "Prompts directory (defaults to package prompts/)",
+    "Load a prompt template by name (e.g. 'map', 'reduce', 'swap')"
+  ],
+  "implicit_assumptions": [
+    {
+      "assumption": "The 'prompts' directory exists relative to config.py or the user-provided prompts_dir exists and contains the required .md files.",
+      "confidence": "high",
+      "risk": "If prompt files are missing, the entire pipeline fails with FileNotFoundError, halting execution."
+    },
+    {
+      "assumption": "The environment where Config is instantiated has filesystem read access to the prompt files.",
+      "confidence": "high",
+      "risk": "Permission errors cause unhandled OSError, crashing the program."
+    },
+    {
+      "assumption": "The caller of Config.prompt() provides a valid prompt name that corresponds to an existing .md file (map, reduce, swap).",
+      "confidence": "medium",
+      "risk": "Invalid name leads to FileNotFoundError; no fallback or default prompt."
+    },
+    {
+      "assumption": "The integer configuration fields (concurrency, max_tokens, max_retries) are set to sensible positive values by the caller (cli.py).",
+      "confidence": "medium",
+      "risk": "Zero or negative values may cause downstream logic errors, e.g., zero concurrency deadlocks, zero max_tokens causes API errors."
+    },
+    {
+      "assumption": "The spec_files list contains valid file paths that exist when used by swap.py.",
+      "confidence": "medium",
+      "risk": "Missing spec files cause file not found errors in swap module, potentially halting swap phase."
+    },
+    {
+      "assumption": "The changed_only and base_ref fields are only used when the repository is a git repo with the given base_ref present.",
+      "confidence": "medium",
+      "risk": "If not a git repo or base_ref invalid, queue building fails in queue.py, causing pipeline failure."
+    },
+    {
+      "assumption": "The model strings (map_model, reduce_model, swap_model) are recognized by the LLMClient.",
+      "confidence": "medium",
+      "risk": "Unrecognized model names cause API errors in client.py, leading to failed completions."
+    },
+    {
+      "assumption": "Config is immutable after creation; no field is mutated concurrently.",
+      "confidence": "low",
+      "risk": "If mutated concurrently, race conditions could cause inconsistent configuration across agents."
+    }
+  ],
+  "stable_since": "2026-04-07",
+  "dependencies_changed_since": [],
+  "cross_file_flags": [
+    "config.py assumes cli.py validates and sets reasonable defaults for integer fields (concurrency, max_tokens) — verify in cli.py findings.",
+    "config.py assumes queue.py handles invalid base_ref gracefully when changed_only=True — verify in queue.py findings.",
+    "config.py assumes client.py accepts the model strings as configured — verify client.py model handling.",
+    "config.py assumes swap.py validates spec_files paths — verify in swap.py findings."
+  ]
+}

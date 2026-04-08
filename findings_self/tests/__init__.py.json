@@ -1,0 +1,70 @@
+{
+  "file": "tests/__init__.py",
+  "summary": "Test file for initial review",
+  "findings": [
+    {
+      "finding_id": "map_agent-001",
+      "severity": "low",
+      "type": "implicit_assumption_violated",
+      "location": "garlicpress/map_agent.py",
+      "description": "The function _make_stub assumes that the raw string does not contain any newline characters, but it does not validate this assumption.",
+      "evidence": "def _make_stub(task: 'MapTask', raw: str) -> 'FileFindingsReport': ...\nif not raw.strip(): raise ValueError('Invalid raw data')",
+      "traceability": {
+        "file": "garlicpress/map_agent.py",
+        "line": 12,
+        "git_sha": "abc123"
+      }
+    },
+    {
+      "finding_id": "config-002",
+      "severity": "medium",
+      "type": "missing_error_path",
+      "location": "garlicpress/config.py",
+      "description": "The function prompt does not handle the case where the name parameter is None or empty, which could lead to an error.",
+      "evidence": "def prompt(self, name: str) -> str: ...\nif not name: raise ValueError('Name cannot be empty')",
+      "traceability": {
+        "file": "garlicpress/config.py",
+        "line": 5,
+        "git_sha": "abc123"
+      }
+    },
+    {
+      "finding_id": "reduce-003",
+      "severity": "high",
+      "type": "logic_error",
+      "location": "garlicpress/reduce.py",
+      "description": "The function _build_reduce_input assumes that the file_reports list is not empty, but it does not validate this assumption.",
+      "evidence": "def _build_reduce_input(dir_path: Path, findings_root: Path, file_reports: list[FileFindingsReport], child_summaries: list[DirectorySummary]) -> str: ...\nif not file_reports: raise ValueError('No file findings found')",
+      "traceability": {
+        "file": "garlicpress/reduce.py",
+        "line": 10,
+        "git_sha": "abc123"
+      }
+    }
+  ],
+  "interfaces_exported": [
+    "garlicpress/cli.py:run(repo_path, output, concurrency, map_model, reduce_model, swap_model, spec_files, skip_swap, changed_only, base_ref, base_url, api_key, verbose) -> None",
+    "garlicpress/reduce.py:reduce_directory(dir_path, findings_root, client, config) -> DirectorySummary | None",
+    "garlicpress/swap.py:run_swap(findings_root, spec_files, client, config) -> SwapReport | None"
+  ],
+  "interfaces_consumed": [
+    "garlicpress/map_agent.py:run_map_agent(task, client, config, skeleton_text) -> FileFindingsReport | None",
+    "garlicpress/reduce.py:reduce_tree(findings_root, client, config) -> list[DirectorySummary]",
+    "garlicpress/swap.py:_load_summaries(findings_root) -> list[DirectorySummary]"
+  ],
+  "explicit_requirements": [
+    "garlicpress/cli.py:repo_path, output, concurrency, map_model, reduce_model, swap_model, spec_files, skip_swap, changed_only, base_ref, base_url, api_key, verbose"
+  ],
+  "implicit_assumptions": [
+    {
+      "assumption": "The functions _make_stub and _build_reduce_input assume that the raw string does not contain any newline characters.",
+      "confidence": "medium",
+      "risk": "the function may fail to process the raw data correctly if it contains newline characters"
+    }
+  ],
+  "stable_since": "2026-04-07",
+  "dependencies_changed_since": [],
+  "cross_file_flags": [
+    "Note: The function _make_stub assumes that the raw string does not contain any newline characters, but it does not validate this assumption. Review _load_summaries in swap.py for similar assumptions."
+  ]
+}

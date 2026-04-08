@@ -1,0 +1,99 @@
+{
+  "directory": "garlicpress",
+  "files_reviewed": 10,
+  "findings_count": {
+    "critical": 0,
+    "high": 5,
+    "medium": 22,
+    "low": 30,
+    "info": 1
+  },
+  "contradictions": [
+    {
+      "severity": "high",
+      "file_a": "cli.py",
+      "assumption": "LLMClient can be initialized with api_key='ollama' and base_url=None and will correctly connect to a local Ollama instance.",
+      "file_b": "client.py",
+      "actual_behavior": "When base_url is None, _is_ollama returns True, causing LLMClient to treat it as Ollama, but the client initialization uses a hardcoded 'http://localhost:11434' base URL and 'ollama' as the API key string, which may not be valid authentication.",
+      "description": "CLI's assumption about valid client configuration conflicts with client.py's actual behavior, which uses placeholder keys and hardcoded URLs that may cause authentication failures.",
+      "finding_ids": [
+        "cli-001",
+        "client-005"
+      ]
+    },
+    {
+      "severity": "high",
+      "file_a": "cli.py",
+      "assumption": "build_queue returns tasks that have a skeleton_path attribute (or at least can have it assigned).",
+      "file_b": "queue.py",
+      "actual_behavior": "queue.py's MapTask definition does not include skeleton_path in its skeleton; cli.py assigns skeleton_path to each task but MapTask may lack this attribute.",
+      "description": "CLI assumes MapTask has skeleton_path, but queue.py's skeleton shows no such field, leading to potential AttributeError during map phase.",
+      "finding_ids": [
+        "cli-003",
+        "cli-002"
+      ]
+    },
+    {
+      "severity": "high",
+      "file_a": "map_agent.py",
+      "assumption": "task.dependencies_changed_since is a list where each element has 'file' and 'changed' keys with string values.",
+      "file_b": "queue.py",
+      "actual_behavior": "queue.py's skeleton does not show that MapTask includes a dependencies_changed_since field, and there is no code that populates such a structure.",
+      "description": "map_agent.py expects a specific data structure that queue.py does not provide, causing KeyError in _normalize_data.",
+      "finding_ids": [
+        "map-007"
+      ]
+    },
+    {
+      "severity": "medium",
+      "file_a": "cli.py",
+      "assumption": "collect_source_files returns a list of valid source files; no empty list handling.",
+      "file_b": "skeleton.py",
+      "actual_behavior": "collect_source_files returns list[Path] but may skip directories based on SKIP_DIRS; if all files are skipped, the list could be empty.",
+      "description": "CLI assumes non-empty source list, but skeleton may produce empty list, leading to empty skeleton_text and map agent receiving no context.",
+      "finding_ids": [
+        "cli-010",
+        "skeleton-009"
+      ]
+    },
+    {
+      "severity": "medium",
+      "file_a": "map_agent.py",
+      "assumption": "collect_source_files returns a list of Path objects that exist and are readable.",
+      "file_b": "skeleton.py",
+      "actual_behavior": "collect_source_files does not validate file existence or readability; it may return paths that are unreadable due to permissions or encoding issues.",
+      "description": "map_agent relies on readable files, but skeleton's collection may include unreadable paths, causing OSError in build_neighborhood.",
+      "finding_ids": [
+        "map-002",
+        "skeleton-002"
+      ]
+    },
+    {
+      "severity": "medium",
+      "file_a": "schema.py",
+      "assumption": "model_json_schema().__str__() produces a valid JSON schema string suitable for injection into prompts.",
+      "file_b": "swap.py",
+      "actual_behavior": "swap.py expects LLM to output JSON matching SwapReport schema, but if the schema string from model_json_schema() is malformed, the prompt may be corrupted.",
+      "description": "Schema's assumption about JSON schema string validity may not hold, affecting swap phase prompt construction and LLM output parsing.",
+      "finding_ids": [
+        "schema-004"
+      ]
+    }
+  ],
+  "escalated_flags": [
+    "cli.py cross-file flags referencing queue.MapTask skeleton_path attribute verification",
+    "cli.py cross-file flags referencing reduce_tree return type verification",
+    "cli.py cross-file flags referencing run_swap return type verification",
+    "client.py cross-file flags about LLMClient.complete signature mismatch with callers",
+    "config.py cross-file flags about cli.py validation of integer fields",
+    "config.py cross-file flags about queue.py handling invalid base_ref",
+    "config.py cross-file flags about swap.py validation of spec_files",
+    "map_agent.py cross-file flags about queue.MapTask fields verification",
+    "map_agent.py cross-file flags about schema.FileFindingsReport.model_dump_json()",
+    "queue.py cross-file flags about skeleton._python_imports behavior",
+    "reduce.py cross-file flags about map_agent._extract_json_object existence",
+    "reduce.py cross-file flags about schema.FileFindingsReport and DirectorySummary field matching",
+    "swap.py cross-file flags about .reduce.SUMMARY_FILENAME constant"
+  ],
+  "summary": "This directory contains the core components of the garlicpress code review system. Overall health is moderate, with several high-severity contradictions between modules, particularly around data structure mismatches (MapTask fields) and client configuration assumptions. Key risks include: (1) Missing error handling across multiple files (map_agent, reduce, swap) leading to silent failures; (2) Race conditions in file I/O operations; (3) Resource leaks in network clients and file handles. Patterns include widespread assumptions about external dependencies (git, LLM APIs) without validation, and insufficient validation of configuration parameters. The system is fragile to malformed inputs and missing dependencies."
+}

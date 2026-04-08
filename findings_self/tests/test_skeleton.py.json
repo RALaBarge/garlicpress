@@ -1,0 +1,76 @@
+{
+  "file": "tests/test_skeleton.py",
+  "summary": "Skeleton generator tests",
+  "findings": [
+    {
+      "finding_id": "test_python_signatures_function-001",
+      "severity": "medium",
+      "type": "logic_error",
+      "location": "tests/test_skeleton.py:49",
+      "description": "The function _write is never called with a valid Path object, which could lead to unexpected behavior.",
+      "evidence": "def _write(tmp_path: Path, name: str, content: str) -> Path:\n    p = tmp_path / name\n    p.write_text(textwrap.dedent(content), encoding=\"utf-8\")\n    return p\n",
+      "traceability": {
+        "file": "tests/test_skeleton.py",
+        "line": 49,
+        "git_sha": null
+      }
+    },
+    {
+      "finding_id": "test_python_signatures_class_and_method-002",
+      "severity": "medium",
+      "type": "logic_error",
+      "location": "tests/test_skeleton.py:60",
+      "description": "The function _python_signatures is not handling the case where the input path is None.",
+      "evidence": "def _python_signatures(path: Path) -> list[str]: ...\n    return []\n",
+      "traceability": {
+        "file": "tests/test_skeleton.py",
+        "line": 60,
+        "git_sha": null
+      }
+    },
+    {
+      "finding_id": "test_python_imports-003",
+      "severity": "low",
+      "type": "missing_error_path",
+      "location": "tests/test_skeleton.py:84",
+      "description": "The function _python_imports is not handling the case where the input path is None.",
+      "evidence": "def _python_imports(path: Path) -> list[str]: ...\n    return []\n",
+      "traceability": {
+        "file": "tests/test_skeleton.py",
+        "line": 84,
+        "git_sha": null
+      }
+    }
+  ],
+  "interfaces_exported": [
+    "_python_signatures",
+    "collect_source_files",
+    "build_skeleton"
+  ],
+  "interfaces_consumed": [
+    "_python_signatures"
+  ],
+  "explicit_requirements": [],
+  "implicit_assumptions": [
+    {
+      "assumption": "The function _write is only called with a valid Path object, but the Path object is not validated for existence.",
+      "confidence": "medium",
+      "risk": "the function may write to an unexpected location"
+    },
+    {
+      "assumption": "The function _python_signatures is only called with a valid Path object, but the Path object is not validated for existence.",
+      "confidence": "medium",
+      "risk": "the function may return an empty list"
+    },
+    {
+      "assumption": "The function _python_imports is only called with a valid Path object, but the Path object is not validated for existence.",
+      "confidence": "medium",
+      "risk": "the function may return an empty list"
+    }
+  ],
+  "stable_since": "2026-04-07",
+  "dependencies_changed_since": [],
+  "cross_file_flags": [
+    "File tests/test_skeleton.py assumes that the Path object is always valid"
+  ]
+}

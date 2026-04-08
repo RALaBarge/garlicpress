@@ -1,0 +1,115 @@
+{
+  "file": "garlicpress/swap.py",
+  "summary": "Bidirectional swap — Agent B (macro-to-micro)",
+  "findings": [
+    {
+      "finding_id": "swap-001",
+      "severity": "critical",
+      "type": "implicit_assumption_violated",
+      "location": "swap.py:12",
+      "description": "Assumes that spec files are always readable, but does not handle non-existent files.",
+      "evidence": "def _load_spec_files(spec_paths: list[Path]): ... if p.exists(): ...",
+      "traceability": {
+        "file": "swap.py",
+        "line": 12,
+        "git_sha": null
+      }
+    },
+    {
+      "finding_id": "swap-002",
+      "severity": "high",
+      "type": "implicit_assumption_violated",
+      "location": "swap.py:15",
+      "description": "Assumes that the output of the swap API call is always a valid JSON object, but does not handle cases where it is not.",
+      "evidence": "data = json.loads(raw) ...",
+      "traceability": {
+        "file": "swap.py",
+        "line": 15,
+        "git_sha": null
+      }
+    },
+    {
+      "finding_id": "swap-003",
+      "severity": "medium",
+      "type": "implicit_assumption_violated",
+      "location": "swap.py:20",
+      "description": "Assumes that the system prompt is always set to the correct value, but does not handle cases where it is not.",
+      "evidence": "system_prompt = config.prompt('swap') ...",
+      "traceability": {
+        "file": "swap.py",
+        "line": 20,
+        "git_sha": null
+      }
+    },
+    {
+      "finding_id": "swap-004",
+      "severity": "low",
+      "type": "implicit_assumption_violated",
+      "location": "swap.py:25",
+      "description": "Assumes that the swap API call is always successful, but does not handle cases where it fails.",
+      "evidence": "try: ... except (json.JSONDecodeError, ValidationError) as e: ...",
+      "traceability": {
+        "file": "swap.py",
+        "line": 25,
+        "git_sha": null
+      }
+    },
+    {
+      "finding_id": "swap-005",
+      "severity": "info",
+      "type": "missing_error_path",
+      "location": "swap.py:30",
+      "description": "Does not handle cases where the swap API call returns an error.",
+      "evidence": "return None if raw.startswith('```') or raw.startswith('Error:'),",
+      "traceability": {
+        "file": "swap.py",
+        "line": 30,
+        "git_sha": null
+      }
+    }
+  ],
+  "interfaces_exported": [
+    "swap.py:run_swap",
+    "swap.py:_load_summaries",
+    "swap.py:_load_spec_files",
+    "swap.py:_build_swap_input"
+  ],
+  "interfaces_consumed": [
+    "swap.py:run_swap"
+  ],
+  "explicit_requirements": [
+    "swap.py:run_swap — Agent B (macro-to-micro)"
+  ],
+  "implicit_assumptions": [
+    {
+      "assumption": "Spec files are always readable",
+      "confidence": "low",
+      "risk": "File not found errors"
+    },
+    {
+      "assumption": "Output of the swap API call is always a valid JSON object",
+      "confidence": "medium",
+      "risk": "JSONDecodeError or ValidationError"
+    },
+    {
+      "assumption": "System prompt is always set to the correct value",
+      "confidence": "low",
+      "risk": "Wrong system prompt"
+    },
+    {
+      "assumption": "Swap API call is always successful",
+      "confidence": "medium",
+      "risk": "Swap API call fails"
+    },
+    {
+      "assumption": "Swap API call returns an error when it fails",
+      "confidence": "low",
+      "risk": "Swap API call fails without returning an error"
+    }
+  ],
+  "stable_since": "2026-04-07",
+  "dependencies_changed_since": [],
+  "cross_file_flags": [
+    "swap.py assumes spec files are always readable — verify in config.py"
+  ]
+}

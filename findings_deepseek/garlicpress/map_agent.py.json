@@ -1,0 +1,166 @@
+{
+  "file": "garlicpress/map_agent.py",
+  "summary": "Stateless async worker that reviews a single source file using an LLM, validates and normalizes the response against the FileFindingsReport schema, and writes findings to disk. Handles LLM output parsing, JSON extraction, and error recovery.",
+  "findings": [
+    {
+      "finding_id": "map-001",
+      "severity": "medium",
+      "type": "missing_validation",
+      "location": "run_map_agent:L121",
+      "description": "File content reading uses errors='replace' which silently replaces malformed UTF-8 with replacement characters, potentially corrupting code and misleading the LLM review.",
+      "evidence": "file_content = task.file_path.read_text(encoding='utf-8', errors='replace')",
+      "traceability": {
+        "file": "garlicpress/map_agent.py",
+        "line": 121,
+        "git_sha": null
+      }
+    },
+    {
+      "finding_id": "map-002",
+      "severity": "high",
+      "type": "missing_error_path",
+      "location": "run_map_agent:L124",
+      "description": "build_neighborhood may raise exceptions (e.g., OSError reading files, SyntaxError parsing Python) but there is no error handling, causing the entire map agent to crash.",
+      "evidence": "neighborhood = build_neighborhood(task.file_path, task.repo_root, source_files)",
+      "traceability": {
+        "file": "garlicpress/map_agent.py",
+        "line": 124,
+        "git_sha": null
+      }
+    },
+    {
+      "finding_id": "map-003",
+      "severity": "low",
+      "type": "logic_error",
+      "location": "_repair_json_escapes:L60",
+      "description": "Escape logic incorrectly handles double backslash sequences: when escape=True and ch is a valid escape, it adds '\\' + ch, resulting in '\\\\n' instead of '\\n' for valid escapes.",
+      "evidence": "if ch not in ('\"', '\\\\', '/', 'b', 'f', 'n', 'r', 't', 'u'):\n    result.append(ch)  # strip the backslash, keep char\nelse:\n    result.append('\\\\')\n    result.append(ch)",
+      "traceability": {
+        "file": "garlicpress/map_agent.py",
+        "line": 60,
+        "git_sha": null
+      }
+    },
+    {
+      "finding_id": "map-004",
+      "severity": "medium",
+      "type": "missing_validation",
+      "location": "_clean_findings:L32",
+      "description": "_clean_findings mutates the input dict in-place, which could have unintended side effects if the same dict is reused elsewhere (e.g., in retry loops).",
+      "evidence": "f[field] = val.split('|')[0].strip()",
+      "traceability": {
+        "file": "garlicpress/map_agent.py",
+        "line": 32,
+        "git_sha": null
+      }
+    },
+    {
+      "finding_id": "map-005",
+      "severity": "medium",
+      "type": "missing_error_path",
+      "location": "_write_findings:L193",
+      "description": "No error handling for write failures (e.g., disk full, permission denied) causes silent loss of findings.",
+      "evidence": "task.output_path.write_text(\n    report.model_dump_json(indent=2),\n    encoding='utf-8',\n)",
+      "traceability": {
+        "file": "garlicpress/map_agent.py",
+        "line": 193,
+        "git_sha": null
+      }
+    },
+    {
+      "finding_id": "map-006",
+      "severity": "low",
+      "type": "logic_error",
+      "location": "run_map_agent:L149",
+      "description": "After exhausting retries, the stub report is created but user_content is not reset, so the LLM may see appended retry instructions in the final attempt.",
+      "evidence": "user_content += (\n    f\"\\n\\n[RETRY {attempt+1}] Your response was invalid: {e}. \"\n    f\"Output ONLY a JSON object matching the schema. No markdown, no prose.\"\n)",
+      "traceability": {
+        "file": "garlicpress/map_agent.py",
+        "line": 149,
+        "git_sha": null
+      }
+    },
+    {
+      "finding_id": "map-007",
+      "severity": "high",
+      "type": "interface_mismatch",
+      "location": "_normalize_data:L77",
+      "description": "Assumes task.dependencies_changed_since is a list of dicts with keys 'file' and 'changed', but skeleton shows queue.py does not export MapTask fields; we cannot verify this matches.",
+      "evidence": "data['dependencies_changed_since'] = [\n    {\"file\": d[\"file\"], \"changed\": d[\"changed\"]}\n    for d in task.dependencies_changed_since\n]",
+      "traceability": {
+        "file": "garlicpress/map_agent.py",
+        "line": 77,
+        "git_sha": null
+      }
+    }
+  ],
+  "interfaces_exported": [
+    "run_map_agent(task: MapTask, client: LLMClient, config: Config, skeleton_text: str) -> FileFindingsReport | None"
+  ],
+  "interfaces_consumed": [
+    "client.LLMClient.complete",
+    "config.Config.prompt",
+    "queue.MapTask",
+    "schema.FileFindingsReport.model_validate",
+    "skeleton.build_neighborhood",
+    "skeleton.collect_source_files"
+  ],
+  "explicit_requirements": [
+    "File content is read as UTF-8 with errors replaced",
+    "Skeleton and file content are truncated to MAX_SKELETON and MAX_FILE characters",
+    "Retry up to config.max_retries times on JSON decode or validation errors",
+    "Write stub report when all retries fail",
+    "Write findings to task.output_path",
+    "Stateless with no shared state between workers"
+  ],
+  "implicit_assumptions": [
+    {
+      "assumption": "collect_source_files returns a list of Path objects that exist and are readable.",
+      "confidence": "high",
+      "risk": "If collect_source_files returns non-existent paths, build_neighborhood will raise OSError, crashing the agent."
+    },
+    {
+      "assumption": "task.file_path is an absolute path and exists within task.repo_root.",
+      "confidence": "high",
+      "risk": "If file_path is relative or outside repo_root, read_text may fail or read wrong file."
+    },
+    {
+      "assumption": "task.output_path.parent is writable and has sufficient disk space.",
+      "confidence": "medium",
+      "risk": "PermissionError or OSError (disk full) during write will cause loss of findings without logging."
+    },
+    {
+      "assumption": "client.complete returns a string (non-empty) and does not raise exceptions beyond those caught.",
+      "confidence": "medium",
+      "risk": "If LLMClient raises unexpected exception (e.g., network timeout), run_map_agent catches it and returns stub, but may miss logging or retry logic."
+    },
+    {
+      "assumption": "config.prompt('map') returns a valid system prompt string.",
+      "confidence": "high",
+      "risk": "If config.prompt raises KeyError or returns non-string, run_map_agent will crash with unhandled exception."
+    },
+    {
+      "assumption": "skeleton_text is the full skeleton for the entire repo, not truncated beyond what's passed.",
+      "confidence": "high",
+      "risk": "If skeleton_text is already truncated, further truncation in run_map_agent may remove critical context."
+    },
+    {
+      "assumption": "task.dependencies_changed_since is a list where each element has 'file' and 'changed' keys with string values.",
+      "confidence": "medium",
+      "risk": "If structure differs, _normalize_data will raise KeyError, causing validation failure and retry loop."
+    },
+    {
+      "assumption": "The LLM's JSON response will have top-level keys matching FileFindingsReport fields.",
+      "confidence": "medium",
+      "risk": "If missing required fields, _normalize_data may produce dict that fails Pydantic validation even after cleaning."
+    }
+  ],
+  "stable_since": "2026-04-07",
+  "dependencies_changed_since": [],
+  "cross_file_flags": [
+    "Verify that queue.MapTask has fields: dependencies_changed_since (list of dicts with 'file', 'changed'), output_path (Path or None), repo_root (Path), file_path (Path), relative_path (str), last_modified (str or None).",
+    "Verify that schema.FileFindingsReport.model_dump_json() returns valid JSON string.",
+    "Verify that skeleton.build_neighborhood and collect_source_files handle errors gracefully or document raised exceptions.",
+    "Check that config.max_retries is defined and is an integer >= 0."
+  ]
+}

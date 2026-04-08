@@ -1,0 +1,65 @@
+{
+  "file": "garlicpress/cli.py",
+  "summary": "GarlicPress CLI implementation",
+  "findings": [
+    {
+      "finding_id": "cli-001",
+      "severity": "medium",
+      "type": "missing_error_path",
+      "location": "cli.py:29",
+      "description": "The `_get_client` function does not handle the case where `api_key` is None or `base_url` is empty. This could lead to an error in the LLMClient.",
+      "evidence": "if (api_key is None or base_url is None): raise ValueError('API key and base URL are required')",
+      "traceability": {
+        "file": "cli.py",
+        "line": 29,
+        "git_sha": null
+      }
+    },
+    {
+      "finding_id": "cli-002",
+      "severity": "low",
+      "type": "logic_error",
+      "location": "cli.py:42",
+      "description": "The `run` command does not handle the case where `spec_files` is empty. This could lead to an error in the `run_swap` function.",
+      "evidence": "if not spec_files: return",
+      "traceability": {
+        "file": "cli.py",
+        "line": 42,
+        "git_sha": null
+      }
+    },
+    {
+      "finding_id": "cli-003",
+      "severity": "medium",
+      "type": "implicit_assumption_violated",
+      "location": "cli.py:53",
+      "description": "The `run` command assumes that the `config` object is always in the correct state. However, this is not guaranteed by the `Config` class.",
+      "evidence": "",
+      "traceability": null
+    }
+  ],
+  "interfaces_exported": [
+    "garlicpress.cli cli",
+    "garlicpress.config Config"
+  ],
+  "interfaces_consumed": [
+    "garlicpress.client _is_ollama",
+    "garlicpress.client LLMClient"
+  ],
+  "explicit_requirements": [
+    "config.prompt(name)",
+    "config.prompt(self, name)"
+  ],
+  "implicit_assumptions": [
+    {
+      "assumption": "The `config` object is always in the correct state.",
+      "confidence": "medium",
+      "risk": "config object may be in an incorrect state"
+    }
+  ],
+  "stable_since": "2026-04-07",
+  "dependencies_changed_since": [],
+  "cross_file_flags": [
+    "The `config` object is not validated for correctness before being passed to the `run_map_agent` function. This could lead to errors in the `run_map_agent` function."
+  ]
+}

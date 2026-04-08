@@ -1,0 +1,55 @@
+{
+  "file": "garlicpress/map_agent.py",
+  "summary": "Stateless async map agent that loads a single source file and skeleton context, calls Claude, and parses JSON response against FileFindingsReport.",
+  "findings": [
+    {
+      "finding_id": "map_agent-001",
+      "severity": "critical",
+      "type": "implicit_assumption_violated",
+      "location": "run_map_agent:LNNN",
+      "description": "The map agent assumes that the LLM model will return a valid JSON object containing the finding descriptions. However, the model may return an invalid JSON response, which is not handled by the map agent.",
+      "evidence": "```\n[RETRY 1] Your response was invalid: Expecting ',' delimiter: line 24 column 46 (char 1039). Output ONLY a JSON object matching the schema. No markdown, no prose.\n```",
+      "traceability": {
+        "file": "map_agent.py",
+        "line": 24,
+        "git_sha": null
+      }
+    },
+    {
+      "finding_id": "map_agent-002",
+      "severity": "low",
+      "type": "implicit_assumption_violated",
+      "location": "run_map_agent:LNNN",
+      "description": "The map agent assumes that the LLM model will return a valid JSON object containing the finding descriptions. However, if the model returns an empty JSON response, the map agent will not handle this scenario properly.",
+      "evidence": "```\n[RETRY 1] Your response was invalid: Expecting ',' delimiter: line 24 column 46 (char 1039). Output ONLY a JSON object matching the schema. No markdown, no prose.\n```",
+      "traceability": {
+        "file": "map_agent.py",
+        "line": 24,
+        "git_sha": null
+      }
+    }
+  ],
+  "interfaces_exported": [
+    "run_map_agent(task: MapTask, client: LLMClient, config: Config, skeleton_text: str) -> FileFindingsReport | None",
+    "run_map_agent.__anext__() -> FileFindingsReport | None"
+  ],
+  "interfaces_consumed": [
+    "LLMClient.complete",
+    "Config.prompt"
+  ],
+  "explicit_requirements": [
+    "the LLM model must return a valid JSON object containing the finding descriptions"
+  ],
+  "implicit_assumptions": [
+    {
+      "assumption": "the LLM model will return a valid JSON object containing the finding descriptions",
+      "confidence": "low",
+      "risk": "the map agent will not handle invalid JSON responses properly"
+    }
+  ],
+  "stable_since": "2026-04-07",
+  "dependencies_changed_since": [],
+  "cross_file_flags": [
+    "The map agent assumes that the LLM model will return a valid JSON object containing the finding descriptions. Verify that the LLM model will handle invalid JSON responses properly."
+  ]
+}

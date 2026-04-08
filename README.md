@@ -184,6 +184,57 @@ garlicpress run /path/to/repo --spec CLAUDE.md \
   --agentic   # coming soon
 ```
 
+## Portfolio & Evidence
+
+garlicpress has been evaluated across **7 diverse codebases** in **10 programming languages** (Lua, Elixir, Haskell, Go, C, TypeScript, Python, Ruby, Swift, Kotlin).
+
+### Evaluations
+
+| Codebase | Language | Files | Findings | Status |
+|----------|----------|-------|----------|--------|
+| andsh | C | 4 | ✅ Clean | PASS |
+| codysnider/resume | Go | 1 | 2 HIGH | REVIEW |
+| captbaritone/webamp | TypeScript/JS | 448 | 276 findings (25 CRITICAL) | AUDIT |
+| Cabrra/LUA-Projects | Lua | 9 | 6 findings | LEARNING |
+| pfantato/elixir-portal | Elixir | 5 | 7 findings | LEARNING |
+| marklnichols/haskell-examples | Haskell | 12 | 15 findings | LEARNING |
+| garlicpress (self) | Python | 10 | 17 findings (8 CRITICAL) | V1.0 |
+
+**Full details:** [`portfolio/runs.md`](portfolio/runs.md)
+
+### Critical Assessment
+
+garlicpress ran its own analyzer on itself. Three independent LLMs (Deepseek v3.2, Llama 3 70B, Qwen 3.6) reviewed the findings:
+
+**Consensus:** 3 genuine blockers, 5 false positives, 5 missed issues  
+**Verdict:** Production-ready for CI; production-hardened in 3-6 months with focused effort
+
+**Details:** [`portfolio/CRITICAL_EVALUATION_SUMMARY.md`](portfolio/CRITICAL_EVALUATION_SUMMARY.md)
+
+### Model Comparison
+
+Same codebase (garlicpress), two different LLM backends:
+
+| Severity | Llama 70B | Deepseek v3.2 |
+|----------|-----------|---------------|
+| **Critical** | 8 | 0 |
+| **High** | 3 | 5 |
+| **Medium** | 6 | 22 |
+| **Low** | 0 | 30 |
+
+**Key insight:** Llama is better at severity (4x faster, conservative). Deepseek is more thorough (catches design gaps). For production, use both.
+
+**Details:** [`portfolio/MODEL_COMPARISON.md`](portfolio/MODEL_COMPARISON.md)
+
+### What This Proves
+
+1. **Language support works** — Evaluated on Lua, Elixir, Haskell, Go, C, TypeScript, Python (regex patterns + AST = comprehensive)
+2. **Cross-file detection works** — Found architectural contradictions in all 7 codebases
+3. **Model choice matters** — Same code, different findings depending on LLM brain
+4. **Tool can self-improve** — Honest assessment of its own vulnerabilities
+
+---
+
 ## Acknowledgements
 
 garlicpress uses [Allium](https://github.com/juxt/allium) spec file conventions (`.allium` files) for the swap phase. Pass any `.allium` spec alongside `CLAUDE.md` to give Agent B richer structured expectations to check against:

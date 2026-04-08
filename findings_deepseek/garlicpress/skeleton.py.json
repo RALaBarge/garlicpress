@@ -1,0 +1,186 @@
+{
+  "file": "garlicpress/skeleton.py",
+  "summary": "AST-based project skeleton generator that extracts function/class signatures from source files across multiple programming languages. Produces a project API surface file and call-graph neighborhoods for map agents.",
+  "findings": [
+    {
+      "finding_id": "skeleton-001",
+      "severity": "medium",
+      "type": "implicit_assumption_violated",
+      "location": "_build_tree_lines:L22",
+      "description": "Assumes all paths in list are children of root; if any path is not a descendant, relative_to() will raise ValueError",
+      "evidence": "rel = p.relative_to(root)",
+      "traceability": {
+        "file": "garlicpress/skeleton.py",
+        "line": 22,
+        "git_sha": null
+      }
+    },
+    {
+      "finding_id": "skeleton-002",
+      "severity": "low",
+      "type": "missing_error_path",
+      "location": "_python_signatures:L33",
+      "description": "If path.read_text() fails due to permissions or encoding issues (even with errors='replace'), the SyntaxError catch won't handle OSError",
+      "evidence": "try:\n    tree = ast.parse(path.read_text(encoding=\"utf-8\", errors=\"replace\"))\nexcept SyntaxError:\n    return []",
+      "traceability": {
+        "file": "garlicpress/skeleton.py",
+        "line": 33,
+        "git_sha": null
+      }
+    },
+    {
+      "finding_id": "skeleton-003",
+      "severity": "low",
+      "type": "logic_error",
+      "location": "_python_signatures:L44",
+      "description": "Condition for detecting top-level functions is flawed; it checks if any node in the entire tree is a FunctionDef (always true for the file itself), causing only class methods to be captured",
+      "evidence": "if any(isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))\n       for node in ast.walk(tree)\n       if node is node):",
+      "traceability": {
+        "file": "garlicpress/skeleton.py",
+        "line": 44,
+        "git_sha": null
+      }
+    },
+    {
+      "finding_id": "skeleton-004",
+      "severity": "low",
+      "type": "implicit_assumption_violated",
+      "location": "_fn_sig:L54",
+      "description": "Assumes ast.unparse() is available; older Python versions (<3.9) will raise AttributeError",
+      "evidence": "args = ast.unparse(node.args)",
+      "traceability": {
+        "file": "garlicpress/skeleton.py",
+        "line": 54,
+        "git_sha": null
+      }
+    },
+    {
+      "finding_id": "skeleton-005",
+      "severity": "low",
+      "type": "missing_validation",
+      "location": "_python_imports:L71",
+      "description": "ImportFrom may have module=None for 'from . import x'; appending '.alias.name' creates leading dot which may break downstream matching",
+      "evidence": "imports.append(f\"{module}.{alias.name}\" if module else alias.name)",
+      "traceability": {
+        "file": "garlicpress/skeleton.py",
+        "line": 71,
+        "git_sha": null
+      }
+    },
+    {
+      "finding_id": "skeleton-006",
+      "severity": "medium",
+      "type": "resource_leak",
+      "location": "_generic_signatures:L158",
+      "description": "File opened but not explicitly closed; relies on garbage collection. Large projects may have many files open simultaneously.",
+      "evidence": "text = path.read_text(encoding=\"utf-8\", errors=\"replace\")",
+      "traceability": {
+        "file": "garlicpress/skeleton.py",
+        "line": 158,
+        "git_sha": null
+      }
+    },
+    {
+      "finding_id": "skeleton-007",
+      "severity": "medium",
+      "type": "implicit_assumption_violated",
+      "location": "build_neighborhood:L197",
+      "description": "Assumes imported module names map cleanly to file paths via replace('/', '.') removal of .py suffix; doesn't handle __init__.py packages correctly",
+      "evidence": "def _rel_to_module(p: Path) -> str:\n    rel = p.relative_to(repo_root)\n    return str(rel).replace(\"/\", \".\").removesuffix(\".py\")",
+      "traceability": {
+        "file": "garlicpress/skeleton.py",
+        "line": 197,
+        "git_sha": null
+      }
+    },
+    {
+      "finding_id": "skeleton-008",
+      "severity": "low",
+      "type": "missing_error_path",
+      "location": "write_skeleton:L223",
+      "description": "No error handling for output_path.write_text(); if output directory doesn't exist or lacks permissions, entire operation fails",
+      "evidence": "output_path.write_text(text, encoding=\"utf-8\")",
+      "traceability": {
+        "file": "garlicpress/skeleton.py",
+        "line": 223,
+        "git_sha": null
+      }
+    },
+    {
+      "finding_id": "skeleton-009",
+      "severity": "info",
+      "type": "implicit_assumption_violated",
+      "location": "collect_source_files:L133",
+      "description": "Assumes SKIP_DIRS contains all common build/artifact directories; may miss project-specific directories like 'target', 'out', 'bin'",
+      "evidence": "if any(part in SKIP_DIRS for part in p.parts):\n    continue",
+      "traceability": {
+        "file": "garlicpress/skeleton.py",
+        "line": 133,
+        "git_sha": null
+      }
+    }
+  ],
+  "interfaces_exported": [
+    "_build_tree_lines(root: Path, paths: list[Path]) -> list[str]",
+    "_python_signatures(path: Path) -> list[str]",
+    "_fn_sig(node: ast.FunctionDef | ast.AsyncFunctionDef) -> str",
+    "_python_imports(path: Path) -> list[str]",
+    "_generic_signatures(path: Path) -> list[str]",
+    "collect_source_files(repo_root: Path) -> list[Path]",
+    "build_skeleton(repo_root: Path, source_files: list[Path]) -> str",
+    "build_neighborhood(target: Path, repo_root: Path, source_files: list[Path]) -> str",
+    "write_skeleton(repo_root: Path, output_path: Path) -> Path"
+  ],
+  "interfaces_consumed": [
+    "ast.parse",
+    "ast.unparse",
+    "ast.walk",
+    "pathlib.Path.rglob",
+    "pathlib.Path.read_text",
+    "pathlib.Path.write_text",
+    "pathlib.Path.relative_to",
+    "re.compile",
+    "re.finditer"
+  ],
+  "explicit_requirements": [
+    "Produces two artifacts: skeleton.txt and neighborhood",
+    "Python files are parsed with ast module",
+    "Other languages get regex fallback",
+    "SKIP_DIRS = {\".git\", \"__pycache__\", ...}",
+    "INCLUDE_EXTENSIONS = {\".py\", \".ts\", \".js\", ...}"
+  ],
+  "implicit_assumptions": [
+    {
+      "assumption": "All files are UTF-8 encoded or can be read with errors='replace' without losing critical structure",
+      "confidence": "medium",
+      "risk": "Binary files or other encodings may cause regex patterns to match garbage or fail entirely"
+    },
+    {
+      "assumption": "Project structure is flat enough that relative_to() won't fail (all source files are under repo_root)",
+      "confidence": "high",
+      "risk": "If collect_source_files returns paths outside repo_root (symlinks), _build_tree_lines crashes"
+    },
+    {
+      "assumption": "Import statements in Python files are correctly formatted and parseable by ast",
+      "confidence": "medium",
+      "risk": "Dynamic imports or conditional imports may be missed, leading to incomplete neighborhood"
+    },
+    {
+      "assumption": "Module names map 1:1 to file paths with simple dot/ slash conversion",
+      "confidence": "low",
+      "risk": "Namespace packages, __init__.py, or custom sys.path modifications cause import matching failures"
+    },
+    {
+      "assumption": "Regex patterns are sufficient for extracting signatures from all supported languages",
+      "confidence": "low",
+      "risk": "Multi-line signatures, decorators, or language-specific quirks cause missed signatures"
+    }
+  ],
+  "stable_since": "2026-04-07",
+  "dependencies_changed_since": [],
+  "cross_file_flags": [
+    "garlicpress/map_agent.py consumes build_skeleton and build_neighborhood; verify assumptions about format match expectations",
+    "garlicpress/cli.py calls write_skeleton; ensure output directory exists before calling",
+    "garlicpress/queue.py may be used by other modules that assume consistent file IDs; ensure skeleton doesn't affect file identification"
+  ]
+}

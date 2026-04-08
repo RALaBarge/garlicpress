@@ -1,0 +1,66 @@
+{
+  "file": "garlicpress/config.py",
+  "summary": "Garlicpress configuration class",
+  "findings": [
+    {
+      "finding_id": "config-001",
+      "severity": "low",
+      "type": "missing_error_path",
+      "location": "config.py:L1",
+      "description": "No explicit error handling for invalid input in the prompt method",
+      "evidence": "config.py:12",
+      "traceability": {
+        "file": "config.py",
+        "line": 12,
+        "git_sha": null
+      }
+    },
+    {
+      "finding_id": "config-002",
+      "severity": "medium",
+      "type": "implicit_assumption_violated",
+      "location": "config.py:L1",
+      "description": "Implicit assumption: `prompts_dir` is set to a relative path, but not validated for existence or accessibility",
+      "evidence": "config.py:13",
+      "traceability": {
+        "file": "config.py",
+        "line": 13,
+        "git_sha": null
+      }
+    },
+    {
+      "finding_id": "config-003",
+      "severity": "high",
+      "type": "security",
+      "location": "config.py:L1",
+      "description": "Potential security issue: `base_ref` is set to `HEAD~1`, which could lead to outdated dependencies",
+      "evidence": "config.py:15",
+      "traceability": {
+        "file": "config.py",
+        "line": 15,
+        "git_sha": null
+      }
+    }
+  ],
+  "interfaces_exported": [
+    "config.Config(prompt(self, name: str) -> str)"
+  ],
+  "interfaces_consumed": [
+    "garlicpress/cli.py:_get_client(api_key: str | None, base_url: str | None) -> LLMClient"
+  ],
+  "explicit_requirements": [
+    "config.Config(map_model: str = \"claude-sonnet-4-6\")"
+  ],
+  "implicit_assumptions": [
+    {
+      "assumption": "The existence and accessibility of `prompts_dir` are silently assumed to be true",
+      "confidence": "medium",
+      "risk": "Error in prompt generation or retrieval"
+    }
+  ],
+  "stable_since": "2026-04-07",
+  "dependencies_changed_since": [],
+  "cross_file_flags": [
+    "config.py assumes LLMClient is available in garlicpress/client.py — verify in client.py findings"
+  ]
+}

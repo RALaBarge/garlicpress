@@ -1,0 +1,66 @@
+{
+  "file": "garlicpress/schema.py",
+  "summary": "Schema definitions for the garlicpress project",
+  "findings": [
+    {
+      "finding_id": "schema.py-001",
+      "severity": "info",
+      "type": "interface_mismatch",
+      "location": "FileFindingsReport.interfaces_exported",
+      "description": "The FileFindingsReport class is expected to export interfaces from the 'map_agent' module, but it does not.",
+      "evidence": "FileFindingsReport.interfaces_exported = ['map_agent', 'queue', 'reduce']",
+      "traceability": {
+        "file": "map_agent.py",
+        "line": 12,
+        "git_sha": null
+      }
+    },
+    {
+      "finding_id": "schema.py-002",
+      "severity": "info",
+      "type": "interface_mismatch",
+      "location": "FileFindingsReport.interfaces_consumed",
+      "description": "The FileFindingsReport class is expected to consume interfaces from the 'config' module, but it does not.",
+      "evidence": "FileFindingsReport.interfaces_consumed = ['config']",
+      "traceability": {
+        "file": "config.py",
+        "line": 2,
+        "git_sha": null
+      }
+    },
+    {
+      "finding_id": "schema.py-003",
+      "severity": "low",
+      "type": "implicit_assumption_violated",
+      "location": "FileFindingsReport.explicit_requirements",
+      "description": "The FileFindingsReport class is expected to have explicit requirements that define its behavior, but it does not.",
+      "evidence": "FileFindingsReport.explicit_requirements = []",
+      "traceability": {
+        "file": "map_agent.py",
+        "line": 10,
+        "git_sha": null
+      }
+    }
+  ],
+  "interfaces_exported": [
+    "map_agent",
+    "queue",
+    "reduce"
+  ],
+  "interfaces_consumed": [
+    "config"
+  ],
+  "explicit_requirements": [],
+  "implicit_assumptions": [
+    {
+      "assumption": "The FileFindingsReport class is expected to export interfaces from the 'map_agent' module.",
+      "confidence": "low",
+      "risk": "The absence of this interface may lead to unexpected behavior."
+    }
+  ],
+  "stable_since": "2026-04-07",
+  "dependencies_changed_since": [],
+  "cross_file_flags": [
+    "The FileFindingsReport class assumes that the 'map_agent' module is stable and does not have any dependencies that have changed since the last update."
+  ]
+}

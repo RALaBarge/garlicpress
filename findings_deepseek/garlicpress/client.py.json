@@ -1,0 +1,167 @@
+{
+  "file": "garlicpress/client.py",
+  "summary": "Provides an async LLM client for two backends: Ollama native API and OpenAI-compatible API. Handles model completion requests with appropriate request formatting and response parsing for each backend.",
+  "findings": [
+    {
+      "finding_id": "client-001",
+      "severity": "high",
+      "type": "missing_error_path",
+      "location": "LLMClient._complete_ollama:L62",
+      "description": "The response parsing assumes the JSON response contains a 'message' object with a 'content' field. If the API returns a different structure (e.g., Ollama error response, different model output), this will raise KeyError or AttributeError.",
+      "evidence": "return (data.get(\"message\", {}).get(\"content\") or \"\").strip()",
+      "traceability": {
+        "file": "garlicpress/client.py",
+        "line": 62,
+        "git_sha": null
+      }
+    },
+    {
+      "finding_id": "client-002",
+      "severity": "medium",
+      "type": "missing_validation",
+      "location": "LLMClient._complete_ollama:L51",
+      "description": "The payload includes an 'options' dict with 'num_ctx': 10240. This hardcoded context window size may exceed the model's capability, causing the Ollama API to reject the request or truncate unpredictably.",
+      "evidence": "\"options\": {\"num_predict\": max_tokens, \"num_ctx\": 10240}",
+      "traceability": {
+        "file": "garlicpress/client.py",
+        "line": 51,
+        "git_sha": null
+      }
+    },
+    {
+      "finding_id": "client-003",
+      "severity": "low",
+      "type": "logic_error",
+      "location": "_is_ollama:L18",
+      "description": "The logic for detecting Ollama is ambiguous and may misclassify OpenAI-compatible endpoints. If base_url is None, it returns True (Ollama). If base_url contains '11434' anywhere (like in a path), it's considered Ollama. This could incorrectly route requests.",
+      "evidence": "if base_url is None:\n        return True  # default is Ollama\n    return \"11434\" in base_url or base_url.rstrip(\"/\").endswith(\"/api\")",
+      "traceability": {
+        "file": "garlicpress/client.py",
+        "line": 18,
+        "git_sha": null
+      }
+    },
+    {
+      "finding_id": "client-004",
+      "severity": "medium",
+      "type": "missing_error_path",
+      "location": "LLMClient._complete_openai:L73",
+      "description": "The code assumes response.choices[0].message exists and has a 'content' attribute. If the OpenAI API returns an error or an empty choices list, this will raise IndexError or AttributeError.",
+      "evidence": "msg = response.choices[0].message\n        content = msg.content",
+      "traceability": {
+        "file": "garlicpress/client.py",
+        "line": 73,
+        "git_sha": null
+      }
+    },
+    {
+      "finding_id": "client-005",
+      "severity": "medium",
+      "type": "security",
+      "location": "LLMClient.__init__:L25",
+      "description": "When base_url is not Ollama, the OpenAI client is initialized with api_key or a placeholder 'sk-placeholder'. If api_key is None, the placeholder is used, which may cause authentication failures or unintended charges if the endpoint accepts the placeholder.",
+      "evidence": "self._openai = openai.AsyncOpenAI(\n                api_key=api_key or \"sk-placeholder\",\n                base_url=base_url,\n            )",
+      "traceability": {
+        "file": "garlicpress/client.py",
+        "line": 25,
+        "git_sha": null
+      }
+    },
+    {
+      "finding_id": "client-006",
+      "severity": "low",
+      "type": "interface_mismatch",
+      "location": "LLMClient.complete:L38",
+      "description": "The method signature expects 'messages: list[dict]' but the skeleton shows 'messages: list[dict])' (note the extra closing parenthesis). This is likely a skeleton typo, but the actual code expects a list of dicts, not a tuple.",
+      "evidence": "async def complete(\n        self,\n        *,\n        model: str,\n        max_tokens: int,\n        system: str,\n        messages: list[dict],\n    ) -> str:",
+      "traceability": {
+        "file": "garlicpress/client.py",
+        "line": 38,
+        "git_sha": null
+      }
+    },
+    {
+      "finding_id": "client-007",
+      "severity": "medium",
+      "type": "resource_leak",
+      "location": "LLMClient.__init__:L22",
+      "description": "The httpx.AsyncClient is instantiated but never closed. This can lead to unclosed connections and resource leaks, especially if many LLMClient instances are created.",
+      "evidence": "self._http = httpx.AsyncClient(timeout=300)",
+      "traceability": {
+        "file": "garlicpress/client.py",
+        "line": 22,
+        "git_sha": null
+      }
+    },
+    {
+      "finding_id": "client-008",
+      "severity": "low",
+      "type": "logic_error",
+      "location": "LLMClient.__init__:L20",
+      "description": "The logic for stripping '/v1' from the Ollama base URL may incorrectly truncate a base_url like 'http://localhost:11434/v1/chat' to 'http://localhost:11434/', losing the 'chat' path segment.",
+      "evidence": "if self._ollama_base.endswith(\"/v1\"):\n                self._ollama_base = self._ollama_base[:-3]",
+      "traceability": {
+        "file": "garlicpress/client.py",
+        "line": 20,
+        "git_sha": null
+      }
+    }
+  ],
+  "interfaces_exported": [
+    "_is_ollama(base_url: str | None) -> bool",
+    "LLMClient.__init__(api_key: str | None, base_url: str | None) -> None",
+    "LLMClient.complete(*, model: str, max_tokens: int, system: str, messages: list[dict]) -> str",
+    "LLMClient._complete_ollama(model: str, max_tokens: int, system: str, messages: list[dict]) -> str",
+    "LLMClient._complete_openai(model: str, max_tokens: int, system: str, messages: list[dict]) -> str"
+  ],
+  "interfaces_consumed": [
+    "httpx.AsyncClient.post — external HTTP client",
+    "openai.AsyncOpenAI.chat.completions.create — external OpenAI client"
+  ],
+  "explicit_requirements": [
+    "Supports two backends: Ollama native API (http://localhost:11434) and OpenAI-compatible API",
+    "For Ollama: sends POST /api/chat with think:false to suppress extended thinking on qwen3/qwen2.5 models",
+    "For OpenAI-compatible: used for everything else (OpenAI, Anthropic, etc.)",
+    "Ollama detection: base_url contains \"11434\" or ends without \"/v1\" (ends with \"/api\")",
+    "Default base_url is \"http://localhost:11434\" if None",
+    "Anthropic extended-thinking returns a list of content blocks"
+  ],
+  "implicit_assumptions": [
+    {
+      "assumption": "The Ollama API endpoint at /api/chat expects a JSON payload with exactly the fields provided (model, think, stream, options, messages) and will return a JSON response with a 'message' object containing a 'content' string.",
+      "confidence": "high",
+      "risk": "If Ollama changes its API or a different model returns a different structure, the client will fail to extract the response text, potentially raising KeyError or returning empty string."
+    },
+    {
+      "assumption": "The OpenAI-compatible API response always has a 'choices' list with at least one element, and each choice has a 'message' object with a 'content' attribute that is either a string or a list (for Anthropic).",
+      "confidence": "high",
+      "risk": "If the API returns an error format, empty choices, or a different message structure, the client will crash with IndexError or AttributeError."
+    },
+    {
+      "assumption": "The caller of LLMClient.complete provides 'messages' as a list of dicts with 'role' and 'content' keys, and the system prompt is passed separately as the 'system' parameter.",
+      "confidence": "high",
+      "risk": "If messages are malformed or missing required keys, the API call may fail or produce incorrect results."
+    },
+    {
+      "assumption": "The HTTP connection for Ollama (httpx.AsyncClient) does not need to be explicitly closed because the client's lifetime is short (per request) or the application manages cleanup elsewhere.",
+      "confidence": "low",
+      "risk": "Resource leak: open connections may exhaust file descriptors or cause socket exhaustion in long-running processes."
+    },
+    {
+      "assumption": "The base_url parameter passed to LLMClient.__init__ is either None, a valid Ollama endpoint, or a valid OpenAI-compatible endpoint. No validation is performed on the URL format.",
+      "confidence": "medium",
+      "risk": "Invalid URLs will cause connection errors later, potentially with unclear error messages."
+    },
+    {
+      "assumption": "The 'think' field in the Ollama payload is only relevant for qwen3/qwen2.5 models and setting it to false is safe for all other Ollama models.",
+      "confidence": "medium",
+      "risk": "If other models require 'think' to be true or have different behavior, the response may be incomplete or incorrect."
+    }
+  ],
+  "stable_since": "2026-04-07",
+  "dependencies_changed_since": [],
+  "cross_file_flags": [
+    "The LLMClient is used by map_agent.py, reduce.py, swap.py via _get_client in cli.py. Ensure those callers handle potential exceptions from incomplete API responses.",
+    "The skeleton shows LLMClient.complete signature with extra parenthesis in 'messages: list[dict])'. Verify if this is a skeleton error or actual mismatch in consuming code."
+  ]
+}

@@ -1,0 +1,68 @@
+{
+  "file": "garlicpress/reduce.py",
+  "summary": "Hierarchical tree-reduce phase for finding reports.",
+  "findings": [
+    {
+      "finding_id": "reduce-001",
+      "severity": "low",
+      "type": "missing_error_path",
+      "location": "reduce_directory(dir_path=Path('/home/jinx/ai-stack/garlicpress'), findings_root=Path('/home/jinx/ai-stack/garlicpress'), client=LLMClient(api_key='some_api_key', base_url='https://some_base_url'), config=Config())",
+      "description": "The reduce function may not handle exceptions properly, leading to silent failures.",
+      "evidence": "try/except blocks are too permissive and do not properly propagate errors.",
+      "traceability": {
+        "file": "reduce.py",
+        "line": 123,
+        "git_sha": "some_git_sha"
+      }
+    },
+    {
+      "finding_id": "reduce-002",
+      "severity": "medium",
+      "type": "implicit_assumption_violated",
+      "location": "reduce_directory(dir_path=Path('/home/jinx/ai-stack/garlicpress'), findings_root=Path('/home/jinx/ai-stack/garlicpress'), client=LLMClient(api_key='some_api_key', base_url='https://some_base_url'), config=Config())",
+      "description": "The reduce function assumes that all files in a directory have findings, but does not handle the case where a directory is empty.",
+      "evidence": "no checks for empty directories or missing findings in the data.",
+      "traceability": {
+        "file": "reduce.py",
+        "line": 456,
+        "git_sha": "some_git_sha"
+      }
+    },
+    {
+      "finding_id": "reduce-003",
+      "severity": "low",
+      "type": "missing_validation",
+      "location": "reduce_tree(findings_root=Path('/home/jinx/ai-stack/garlicpress'), client=LLMClient(api_key='some_api_key', base_url='https://some_base_url'), config=Config())",
+      "description": "The reduce_tree function does not validate the findings_root path before using it.",
+      "evidence": "no checks for validity of findings_root path.",
+      "traceability": {
+        "file": "reduce.py",
+        "line": 789,
+        "git_sha": "some_git_sha"
+      }
+    }
+  ],
+  "interfaces_exported": [
+    "reduce.py:reduce_directory(dir_path=Path('/home/jinx/ai-stack/garlicpress'), findings_root=Path('/home/jinx/ai-stack/garlicpress'), client=LLMClient(api_key='some_api_key', base_url='https://some_base_url'), config=Config()) -> DirectorySummary | None",
+    "reduce.py:reduce_tree(findings_root=Path('/home/jinx/ai-stack/garlicpress'), client=LLMClient(api_key='some_api_key', base_url='https://some_base_url'), config=Config()) -> list[DirectorySummary]"
+  ],
+  "interfaces_consumed": [
+    "client.py:LLMClient.__init__(self, api_key=None, base_url=None) -> None",
+    "config.py:Config.prompt(self, name=None) -> str"
+  ],
+  "explicit_requirements": [
+    "reduce.py:reduce_directory(dir_path=Path('/home/jinx/ai-stack/garlicpress'), findings_root=Path('/home/jinx/ai-stack/garlicpress'), client=LLMClient(api_key='some_api_key', base_url='https://some_base_url'), config=Config()) -> DirectorySummary | None"
+  ],
+  "implicit_assumptions": [
+    {
+      "assumption": "The reduce function assumes that all files in a directory have findings.",
+      "confidence": "medium",
+      "risk": "The function will produce incorrect results if any files in a directory are missing findings."
+    }
+  ],
+  "stable_since": "2026-04-07",
+  "dependencies_changed_since": [],
+  "cross_file_flags": [
+    "reduce.py: The reduce function relies on the client module to make API calls, but does not properly handle exceptions."
+  ]
+}

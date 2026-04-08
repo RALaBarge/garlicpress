@@ -1,0 +1,132 @@
+{
+  "file": "garlicpress/schema.py",
+  "summary": "Defines Pydantic models for code review findings, reports, and summary structures used throughout the garlicpress system. Provides enumerations for severity and finding types, and functions to export JSON schemas.",
+  "findings": [
+    {
+      "finding_id": "schema-001",
+      "severity": "medium",
+      "type": "missing_validation",
+      "location": "Finding:finding_id:L30",
+      "description": "Finding.finding_id has a default empty string value but no validation for format or length. This could lead to malformed IDs that break downstream processing or cause collisions.",
+      "evidence": "class Finding(BaseModel):\n    finding_id: str = \"\"",
+      "traceability": {
+        "file": "garlicpress/schema.py",
+        "line": 30,
+        "git_sha": null
+      }
+    },
+    {
+      "finding_id": "schema-002",
+      "severity": "medium",
+      "type": "missing_validation",
+      "location": "Finding:location:L31",
+      "description": "Finding.location is a required string field but has no format validation. Downstream logic may assume a specific format (e.g., 'ClassName.method_name:LNNN'), and malformed values could cause parsing errors.",
+      "evidence": "    location: str = \"\"",
+      "traceability": {
+        "file": "garlicpress/schema.py",
+        "line": 31,
+        "git_sha": null
+      }
+    },
+    {
+      "finding_id": "schema-003",
+      "severity": "low",
+      "type": "missing_validation",
+      "location": "ImplicitAssumption:confidence:L45",
+      "description": "ImplicitAssumption.confidence default is 'medium' but the type annotation allows any string. There's no validation that the value is one of the allowed strings ('high', 'medium', 'low'), which could cause issues in downstream reporting logic.",
+      "evidence": "    confidence: str = \"medium\"  # \"high\" | \"medium\" | \"low\"",
+      "traceability": {
+        "file": "garlicpress/schema.py",
+        "line": 45,
+        "git_sha": null
+      }
+    },
+    {
+      "finding_id": "schema-004",
+      "severity": "low",
+      "type": "implicit_assumption_violated",
+      "location": "module:L74",
+      "description": "The model_json_schema() method is assumed to return a string representation of the JSON schema. However, model_json_schema() returns a dict by default. The __str__() call might produce a non-JSON string representation.",
+      "evidence": "def findings_json_schema() -> str:\n    return FileFindingsReport.model_json_schema().__str__()",
+      "traceability": {
+        "file": "garlicpress/schema.py",
+        "line": 74,
+        "git_sha": null
+      }
+    }
+  ],
+  "interfaces_exported": [
+    "Severity(critical, high, medium, low, info) -> Severity",
+    "FindingType(missing_error_path, missing_auth, interface_mismatch, implicit_assumption_violated, security, logic_error, missing_validation, race_condition, resource_leak, other) -> FindingType",
+    "Traceability(file: str, line: int | None = None, git_sha: str | None = None) -> Traceability",
+    "Finding(finding_id: str = \"\", severity: Severity = Severity.info, type: FindingType = FindingType.other, location: str = \"\", description: str = \"\", evidence: str = \"\", traceability: Traceability | None = None) -> Finding",
+    "ImplicitAssumption(assumption: str, confidence: str = \"medium\", risk: str = \"\") -> ImplicitAssumption",
+    "DependencyChange(file: str, changed: str) -> DependencyChange",
+    "FileFindingsReport(file: str, summary: str, findings: list[Finding] = Field(default_factory=list), interfaces_exported: list[str] = Field(default_factory=list), interfaces_consumed: list[str] = Field(default_factory=list), explicit_requirements: list[str] = Field(default_factory=list), implicit_assumptions: list[ImplicitAssumption] = Field(default_factory=list), stable_since: str | None = None, dependencies_changed_since: list[DependencyChange] = Field(default_factory=list), cross_file_flags: list[str] = Field(default_factory=list)) -> FileFindingsReport",
+    "Contradiction(severity: Severity = Severity.medium, file_a: str = \"\", assumption: str = \"\", file_b: str = \"\", actual_behavior: str = \"\", description: str = \"\", finding_ids: list[str] = Field(default_factory=list)) -> Contradiction",
+    "DirectorySummary(directory: str, files_reviewed: int, findings_count: dict[str, int] = Field(default_factory=dict), contradictions: list[Contradiction] = Field(default_factory=list), escalated_flags: list[str] = Field(default_factory=list), summary: str) -> DirectorySummary",
+    "SwapFinding(finding_id: str, severity: Severity, spec_expectation: str, observed_behavior: str, map_finding_ids: list[str] = Field(default_factory=list), description: str) -> SwapFinding",
+    "SwapReport(spec_files_used: list[str], confirmed: list[str], contradictions: list[SwapFinding], ambiguous: list[SwapFinding], summary: str) -> SwapReport",
+    "FinalReport(repo: str, files_reviewed: int, map_duration_s: float, reduce_duration_s: float, swap_duration_s: float, findings_by_severity: dict[str, int], contradictions: list[Contradiction], swap: SwapReport | None = None, top_findings: list[Finding] = Field(default_factory=list), directory_summaries: list[DirectorySummary] = Field(default_factory=list), summary: str) -> FinalReport",
+    "findings_json_schema() -> str",
+    "reduce_json_schema() -> str",
+    "swap_json_schema() -> str"
+  ],
+  "interfaces_consumed": [
+    "pydantic.BaseModel — used for all model definitions",
+    "pydantic.Field — used for default_factory",
+    "typing.Any — imported but not used",
+    "typing.Enum — base class for Severity and FindingType"
+  ],
+  "explicit_requirements": [
+    "Severity must be one of: critical, high, medium, low, info",
+    "FindingType must be one of the defined enum values",
+    "Traceability.file is required (no default)",
+    "ImplicitAssumption.confidence comment indicates allowed values: \"high\" | \"medium\" | \"low\"",
+    "FileFindingsReport is \"Output of a single map agent turn. One per source file.\"",
+    "Contradiction is \"A cross-file assumption conflict detected during reduce.\"",
+    "DependencyChange.changed is an ISO date string",
+    "stable_since is an ISO date string or None",
+    "JSON schema functions return string representations"
+  ],
+  "implicit_assumptions": [
+    {
+      "assumption": "Pydantic BaseModel is imported and available in the runtime environment.",
+      "confidence": "high",
+      "risk": "Import error or runtime failure if pydantic is not installed or version incompatible."
+    },
+    {
+      "assumption": "Enum values defined in Severity and FindingType are exhaustive for all downstream logic.",
+      "confidence": "high",
+      "risk": "If other code expects additional severity or type values, serialization/deserialization may fail or cause runtime errors."
+    },
+    {
+      "assumption": "All model fields with default values (empty strings, empty lists) are safe defaults that won't cause semantic errors in downstream processing.",
+      "confidence": "medium",
+      "risk": "Empty required fields like finding_id or location could break aggregation, deduplication, or reporting logic that expects non-empty values."
+    },
+    {
+      "assumption": "model_json_schema().__str__() produces a valid JSON schema string suitable for injection into prompts.",
+      "confidence": "low",
+      "risk": "The string representation may not be valid JSON or may be formatted incorrectly for the LLM prompt, causing parse errors."
+    },
+    {
+      "assumption": "Other modules (map_agent, reduce, swap) will correctly instantiate these models with appropriate data; no additional runtime validation is needed.",
+      "confidence": "medium",
+      "risk": "Malformed data from external sources (LLM outputs) could cause validation errors or create inconsistent report structures."
+    },
+    {
+      "assumption": "The schema module has no side effects and can be safely imported multiple times.",
+      "confidence": "high",
+      "risk": "Minimal; potential import overhead but no functional impact."
+    }
+  ],
+  "stable_since": "2026-04-07",
+  "dependencies_changed_since": [],
+  "cross_file_flags": [
+    "map_agent.py uses FileFindingsReport — verify that it handles empty strings in finding_id and location fields gracefully.",
+    "reduce.py uses DirectorySummary — verify it expects findings_count dict with severity keys matching Severity enum values.",
+    "swap.py uses SwapReport — verify it expects spec_files_used list and confirmed list to be free text strings.",
+    "cli.py likely serializes FinalReport to JSON — verify that model_json_schema() string output is actually used and works as intended."
+  ]
+}

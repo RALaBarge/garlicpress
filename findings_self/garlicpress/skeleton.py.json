@@ -1,0 +1,79 @@
+{
+  "file": "garlicpress/skeleton.py",
+  "summary": "Project skeleton generator skeleton",
+  "findings": [
+    {
+      "finding_id": "skeleton-001",
+      "severity": "medium",
+      "type": "interface_mismatch",
+      "location": "garlicpress/queue.py",
+      "description": "The `MapTask` class is imported by `garlicpress/queue.py`, but the `swap.py` module also defines a `MapTask` class. This may lead to unexpected behavior when swapping tasks.",
+      "evidence": "import garlicpress.queue as queue",
+      "traceability": {
+        "file": "queue.py",
+        "line": 5,
+        "git_sha": null
+      }
+    },
+    {
+      "finding_id": "skeleton-002",
+      "severity": "low",
+      "type": "implicit_assumption_violated",
+      "location": "garlicpress/reduce.py",
+      "description": "The `reduce_directory` function assumes that the `findings_root` directory exists and is accessible, but this assumption is not validated.",
+      "evidence": "async def reduce_directory(dir_path: Path, findings_root: Path, client: LLMClient, config: Config) -> DirectorySummary | None:",
+      "traceability": {
+        "file": "reduce.py",
+        "line": 5,
+        "git_sha": null
+      }
+    },
+    {
+      "finding_id": "skeleton-003",
+      "severity": "critical",
+      "type": "security",
+      "location": "garlicpress/swap.py",
+      "description": "The `run_swap` function uses the `LLMClient` to make requests to an API, but the `api_key` parameter is not validated or sanitized.",
+      "evidence": "async def run_swap(findings_root: Path, spec_files: list[Path], client: LLMClient, config: Config) -> SwapReport | None:",
+      "traceability": {
+        "file": "swap.py",
+        "line": 5,
+        "git_sha": null
+      }
+    },
+    {
+      "finding_id": "skeleton-004",
+      "severity": "medium",
+      "type": "implicit_assumption_violated",
+      "location": "garlicpress/map_agent.py",
+      "description": "The `_make_stub` function assumes that the `raw` parameter is a valid JSON string, but this assumption is not validated.",
+      "evidence": "_make_stub(task: 'MapTask', raw: str) -> 'FileFindingsReport':",
+      "traceability": {
+        "file": "map_agent.py",
+        "line": 5,
+        "git_sha": null
+      }
+    }
+  ],
+  "interfaces_exported": [
+    "garlicpress.queue.MapTask"
+  ],
+  "interfaces_consumed": [
+    "garlicpress.swap.MapTask"
+  ],
+  "explicit_requirements": [
+    "The `MapTask` class is defined in `garlicpress/queue.py`."
+  ],
+  "implicit_assumptions": [
+    {
+      "assumption": "The `findings_root` directory exists and is accessible before calling `reduce_directory`.",
+      "confidence": "medium",
+      "risk": "If `findings_root` does not exist or is not accessible, the program may crash or produce incorrect results."
+    }
+  ],
+  "stable_since": "2026-04-07",
+  "dependencies_changed_since": [],
+  "cross_file_flags": [
+    "The `MapTask` class is imported by `garlicpress/queue.py`, but it is also defined in `garlicpress/swap.py`. Verify that the behavior is consistent across both files."
+  ]
+}

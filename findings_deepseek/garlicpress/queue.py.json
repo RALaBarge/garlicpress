@@ -1,0 +1,128 @@
+{
+  "file": "garlicpress/queue.py",
+  "summary": "Builds a queue of MapTask objects for code review. Discovers source files, annotates them with git metadata (last modified date, dependencies changed more recently), and filters based on changed-only mode.",
+  "findings": [
+    {
+      "finding_id": "queue-001",
+      "severity": "medium",
+      "type": "missing_error_path",
+      "location": "build_queue:L74-L83",
+      "description": "If 'changed_only' is True and git diff fails, the function silently falls back to full scan. This could cause a large queue when the user expects only changed files, leading to wasted compute and time.",
+      "evidence": "except Exception:\n    pass  # fall back to full scan",
+      "traceability": {
+        "file": "garlicpress/queue.py",
+        "line": 83,
+        "git_sha": null
+      }
+    },
+    {
+      "finding_id": "queue-002",
+      "severity": "medium",
+      "type": "race_condition",
+      "location": "build_queue:L99-L100",
+      "description": "Multiple concurrent calls to build_queue could race when creating parent directories for output_path. This could cause 'FileExistsError' or other permission issues if mkdir is called simultaneously.",
+      "evidence": "out_path.parent.mkdir(parents=True, exist_ok=True)",
+      "traceability": {
+        "file": "garlicpress/queue.py",
+        "line": 99,
+        "git_sha": null
+      }
+    },
+    {
+      "finding_id": "queue-003",
+      "severity": "low",
+      "type": "logic_error",
+      "location": "build_queue:L88-L95",
+      "description": "Dependency detection assumes Python modules map directly to files under repo_root. This breaks for packages (__init__.py), modules in subdirectories not matching import path, or modules with different file extensions.",
+      "evidence": "candidate = imp.replace(\".\", \"/\") + \".py\"\nif candidate in changed_since:",
+      "traceability": {
+        "file": "garlicpress/queue.py",
+        "line": 93,
+        "git_sha": null
+      }
+    },
+    {
+      "finding_id": "queue-004",
+      "severity": "low",
+      "type": "missing_error_path",
+      "location": "_git_last_modified:L24-L31",
+      "description": "Subprocess timeout is 10 seconds. If git log --follow is slow on large repos, it will timeout and return None, losing git metadata. No retry or fallback.",
+      "evidence": "timeout=10,\n...\nexcept Exception:\n    return None",
+      "traceability": {
+        "file": "garlicpress/queue.py",
+        "line": 29,
+        "git_sha": null
+      }
+    },
+    {
+      "finding_id": "queue-005",
+      "severity": "low",
+      "type": "security",
+      "location": "build_queue:L72",
+      "description": "The base_ref parameter is passed directly to git diff command without validation. A malicious or malformed ref could lead to shell injection if subprocess used shell=True (it doesn't, but still a risk if command construction changes).",
+      "evidence": "result = subprocess.run(\n    [\"git\", \"diff\", \"--name-only\", base_ref, \"HEAD\"],",
+      "traceability": {
+        "file": "garlicpress/queue.py",
+        "line": 72,
+        "git_sha": null
+      }
+    }
+  ],
+  "interfaces_exported": [
+    "_git_last_modified(repo_root: Path, file_path: Path) -> str | None",
+    "_git_files_changed_since(repo_root: Path, since_date: str) -> set[str]",
+    "_git_is_repo(path: Path) -> bool",
+    "MapTask.file_id(self) -> str",
+    "build_queue(repo_root: Path, findings_root: Path, changed_only: bool = False, base_ref: str = 'HEAD~1') -> list[MapTask]"
+  ],
+  "interfaces_consumed": [
+    "garlicpress.skeleton.collect_source_files — what you call from other files",
+    "garlicpress.skeleton._python_imports — what you call from other files"
+  ],
+  "explicit_requirements": [
+    "File extensions are defined by INCLUDE_EXTENSIONS",
+    "Skip directories defined by SKIP_DIRS",
+    "MapTask contains file_path, repo_root, relative_path, last_modified, dependencies_changed_since, skeleton_path, output_path",
+    "If changed_only and is_git, filter to files in git diff",
+    "If is_git and last_mod and .py file, check if dependencies changed more recently"
+  ],
+  "implicit_assumptions": [
+    {
+      "assumption": "The repository root contains a .git directory and git is installed and accessible in PATH.",
+      "confidence": "high",
+      "risk": "If git is not available, _git_is_repo returns False, last_modified is None, dependency tracking is skipped, and changed_only filtering may fail silently (fallback)."
+    },
+    {
+      "assumption": "collect_source_files returns absolute paths that are relative to repo_root.",
+      "confidence": "high",
+      "risk": "If collect_source_files returns paths relative to a different root, file_path.relative_to(repo_root) will raise ValueError, crashing build_queue."
+    },
+    {
+      "assumption": "_python_imports returns import statements that are direct file siblings in the same repo (no third-party imports).",
+      "confidence": "medium",
+      "risk": "If imports include external modules (e.g., 'os', 'requests'), the dependency detection will create invalid file paths (e.g., 'os.py'), leading to false positives or errors."
+    },
+    {
+      "assumption": "findings_root is writable and its parent directories exist or can be created.",
+      "confidence": "medium",
+      "risk": "If findings_root is on a read‑only filesystem or permissions are insufficient, mkdir will raise an OSError and crash the queue building."
+    },
+    {
+      "assumption": "Callers of build_queue will not modify the returned MapTask list concurrently.",
+      "confidence": "low",
+      "risk": "If multiple threads/processes read and modify the same list, attributes like skeleton_path or output_path could be corrupted."
+    },
+    {
+      "assumption": "The git log --follow command works as expected and returns ISO dates in the exact format 'YYYY-MM-DD HH:MM:SS +ZZZZ'.",
+      "confidence": "high",
+      "risk": "If git log format differs (e.g., different timezone format, no space), the split(' ')[0] may produce an incorrect date or crash."
+    }
+  ],
+  "stable_since": "2026-04-07",
+  "dependencies_changed_since": [],
+  "cross_file_flags": [
+    "queue.py assumes garlicpress.skeleton._python_imports returns a list of import strings; verify its behavior in skeleton.py findings.",
+    "queue.py assumes garlicpress.skeleton.collect_source_files respects INCLUDE_EXTENSIONS and SKIP_DIRS; verify these constants are defined and used correctly.",
+    "MapTask attributes skeleton_path and output_path are set by runner (map_agent.py) — ensure map_agent.py writes them."
+  ]
+}

@@ -1,0 +1,73 @@
+{
+  "file": "garlicpress/queue.py",
+  "summary": "Task queue builder that discovers source files, annotates each with git metadata, and produces an ordered list of MapTask objects ready for the map phase.",
+  "findings": [
+    {
+      "finding_id": "queue-001",
+      "severity": "low",
+      "type": "implicit_assumption_violated",
+      "location": "queue.py:build_queue(repo_root, findings_root, changed_only=False, base_ref='HEAD~1')",
+      "description": "This function assumes that the `collect_source_files` function returns a list of file paths that are guaranteed to exist in the repository. However, this is not explicitly stated in the documentation.",
+      "evidence": "def build_queue(repo_root: Path, findings_root: Path, changed_only: bool = False, base_ref: str = 'HEAD~1'):\n    # ...",
+      "traceability": {
+        "file": "skeleton.py",
+        "line": null,
+        "git_sha": null
+      }
+    },
+    {
+      "finding_id": "queue-002",
+      "severity": "medium",
+      "type": "security",
+      "location": "queue.py:_git_last_modified(repo_root, file_path) if is_git else None",
+      "description": "This function assumes that the `is_git` variable is always set to `True`, but this is not explicitly checked for.",
+      "evidence": "def _git_last_modified(repo_root: Path, file_path: Path) -> str | None:\n    try:\n        result = subprocess.run(['git', 'log', '--follow', '-1', '--format=%ai', str(file_path)],\n            cwd=repo_root,\n            capture_output=True,\n            text=True,\n            timeout=10,\n        )\n        out = result.stdout.strip()\n        return out.split(\" \")[0] if out else None\n    except Exception:\n        return None",
+      "traceability": {
+        "file": "queue.py",
+        "line": 15,
+        "git_sha": null
+      }
+    },
+    {
+      "finding_id": "queue-003",
+      "severity": "low",
+      "type": "implicit_assumption_violated",
+      "location": "queue.py:tasks.append(MapTask(file_path=file_path, repo_root=repo_root, relative_path=rel, last_modified=last_mod, dependencies_changed_since=deps_changed, output_path=out_path))",
+      "description": "This function assumes that the `deps_changed` list is always non-empty, but this is not explicitly stated in the documentation.",
+      "evidence": "tasks.append(MapTask(file_path=file_path, repo_root=repo_root, relative_path=rel, last_modified=last_mod, dependencies_changed_since=deps_changed, output_path=out_path))",
+      "traceability": {
+        "file": "queue.py",
+        "line": 27,
+        "git_sha": null
+      }
+    }
+  ],
+  "interfaces_exported": [
+    "garlicpress/cli.py:run",
+    "garlicpress/queue.py:build_queue",
+    "garlicpress/reduce.py:reduce_directory"
+  ],
+  "interfaces_consumed": [
+    "garlicpress/cli.py:_run_all"
+  ],
+  "explicit_requirements": [
+    "garlicpress/cli.py:run"
+  ],
+  "implicit_assumptions": [
+    {
+      "assumption": "The `collect_source_files` function always returns a list of file paths that exist in the repository.",
+      "confidence": "low",
+      "risk": "This assumption could lead to the `build_queue` function failing if the repository is not properly set up."
+    },
+    {
+      "assumption": "The `is_git` variable is always set to `True`.",
+      "confidence": "low",
+      "risk": "This assumption could lead to the `_git_last_modified` function failing if the repository is not properly set up."
+    }
+  ],
+  "stable_since": "2026-04-07",
+  "dependencies_changed_since": [],
+  "cross_file_flags": [
+    "The `build_queue` function assumes that the `collect_source_files` function is stable and does not change the dependencies of the repository."
+  ]
+}

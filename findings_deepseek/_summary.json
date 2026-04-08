@@ -1,0 +1,32 @@
+{
+  "directory": ".",
+  "files_reviewed": 13,
+  "findings_count": {
+    "critical": 0,
+    "high": 0,
+    "medium": 0,
+    "low": 0,
+    "info": 0
+  },
+  "contradictions": [],
+  "escalated_flags": [
+    "garlicpress/cli.py cross-file flags referencing queue.MapTask skeleton_path attribute verification",
+    "garlicpress/cli.py cross-file flags referencing reduce_tree return type verification",
+    "garlicpress/cli.py cross-file flags referencing run_swap return type verification",
+    "garlicpress/client.py cross-file flags about LLMClient.complete signature mismatch with callers",
+    "garlicpress/config.py cross-file flags about cli.py validation of integer fields",
+    "garlicpress/config.py cross-file flags about queue.py handling invalid base_ref",
+    "garlicpress/config.py cross-file flags about swap.py validation of spec_files",
+    "garlicpress/map_agent.py cross-file flags about queue.MapTask fields verification",
+    "garlicpress/map_agent.py cross-file flags about schema.FileFindingsReport.model_dump_json()",
+    "garlicpress/queue.py cross-file flags about skeleton._python_imports behavior",
+    "garlicpress/reduce.py cross-file flags about map_agent._extract_json_object existence",
+    "garlicpress/reduce.py cross-file flags about schema.FileFindingsReport and DirectorySummary field matching",
+    "garlicpress/swap.py cross-file flags about .reduce.SUMMARY_FILENAME constant",
+    "tests rely on garlicpress.schema module's exact structure. Verify schema.py findings to ensure no breaking changes to model definitions.",
+    "test assumes _python_signatures() handles various Python syntax constructs - verify implementation in skeleton.py handles edge cases",
+    "test assumes _python_imports() extracts both 'import x' and 'from y import z' statements - verify implementation in skeleton.py",
+    "test assumes collect_source_files() filters by file extension and directory name - verify implementation logic matches test expectations"
+  ],
+  "summary": "This directory contains two subdirectories: garlicpress (core system) and tests (test suite). The garlicpress directory shows moderate health with 6 contradictions indicating integration risks around data structure mismatches and missing error handling. The tests directory has 2 contradictions related to test reliability. Key patterns include: 1) Widespread implicit assumptions about external dependencies without validation, 2) Insufficient error handling leading to potential silent failures, 3) Data structure compatibility issues between modules. The escalated flags represent unresolved dependencies between modules that require cross-directory verification."
+}

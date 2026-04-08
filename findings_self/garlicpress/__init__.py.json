@@ -1,0 +1,53 @@
+{
+  "file": "garlicpress/__init__.py",
+  "summary": "Map Agent — File responsible for finding and repairing files in a repository",
+  "findings": [
+    {
+      "finding_id": "map_agent-001",
+      "severity": "low",
+      "type": "implicit_assumption_violated",
+      "location": "map_agent.py:run_map_agent",
+      "description": "The function run_map_agent assumes that the LLMClient is initialized with the correct API key and base URL. This is not explicitly checked.",
+      "evidence": "def run_map_agent(task: MapTask, client: LLMClient, config: Config, skeleton_text: str) -> FileFindingsReport | None: ...\n\nclient = LLMClient(config.api_key, config.base_url)",
+      "traceability": {
+        "file": "map_agent.py",
+        "line": 25,
+        "git_sha": null
+      }
+    },
+    {
+      "finding_id": "map_agent-002",
+      "severity": "medium",
+      "type": "security",
+      "location": "map_agent.py:run_map_agent",
+      "description": "The function run_map_agent uses the LLMClient to complete the task without validating the input data.",
+      "evidence": "def run_map_agent(task: MapTask, client: LLMClient, config: Config, skeleton_text: str) -> FileFindingsReport | None: ...\n\nresult = await client.complete(model=skeleton_text, max_tokens=10, system='ollama', messages=[{'text': 'hello'}])",
+      "traceability": {
+        "file": "map_agent.py",
+        "line": 27,
+        "git_sha": null
+      }
+    }
+  ],
+  "interfaces_exported": [
+    "garlicpress.map_agent.run_map_agent — task: MapTask, LLMClient, Config, skeleton_text: str -> FileFindingsReport | None"
+  ],
+  "interfaces_consumed": [
+    "garlicpress.client\tLLMClient — what you call from other files"
+  ],
+  "explicit_requirements": [
+    "task: MapTask — defined in garlicpress/queue.py"
+  ],
+  "implicit_assumptions": [
+    {
+      "assumption": "The LLMClient is initialized with the correct API key and base URL.",
+      "confidence": "medium",
+      "risk": "The function run_map_agent will fail if the LLMClient is not initialized correctly."
+    }
+  ],
+  "stable_since": "2026-04-07",
+  "dependencies_changed_since": [],
+  "cross_file_flags": [
+    "Test that the LLMClient is initialized correctly in the map_agent file."
+  ]
+}

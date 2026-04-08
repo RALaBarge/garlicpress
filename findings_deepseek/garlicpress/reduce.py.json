@@ -1,0 +1,182 @@
+{
+  "file": "garlicpress/reduce.py",
+  "summary": "Hierarchical tree-reduce phase that walks a findings directory bottom-up, loads per-file reports and child directory summaries, calls an LLM to synthesize contradictions and produce a DirectorySummary, and writes _summary.json at each level.",
+  "findings": [
+    {
+      "finding_id": "reduce-001",
+      "severity": "medium",
+      "type": "missing_error_path",
+      "location": "_load_file_findings:LNNN",
+      "description": "Swallows generic exceptions when loading findings files, potentially masking file system errors or schema validation issues.",
+      "evidence": "try:\n    data = json.loads(p.read_text(encoding=\"utf-8\"))\n    reports.append(FileFindingsReport.model_validate(data))\nexcept Exception as e:\n    logger.warning(\"Could not load findings %s: %s\", p, e)",
+      "traceability": {
+        "file": "garlicpress/reduce.py",
+        "line": null,
+        "git_sha": null
+      }
+    },
+    {
+      "finding_id": "reduce-002",
+      "severity": "medium",
+      "type": "missing_error_path",
+      "location": "_load_child_summaries:LNNN",
+      "description": "Swallows generic exceptions when loading child summaries, potentially masking file system errors or schema validation issues.",
+      "evidence": "try:\n    data = json.loads(summary_path.read_text(encoding=\"utf-8\"))\n    summaries.append(DirectorySummary.model_validate(data))\nexcept Exception as e:\n    logger.warning(\"Could not load summary %s: %s\", summary_path, e)",
+      "traceability": {
+        "file": "garlicpress/reduce.py",
+        "line": null,
+        "git_sha": null
+      }
+    },
+    {
+      "finding_id": "reduce-003",
+      "severity": "medium",
+      "type": "logic_error",
+      "location": "reduce_directory:LNNN",
+      "description": "The total_files calculation adds len(file_reports) to sum of child_summaries.files_reviewed. This double-counts files reviewed in child directories, as child summaries already include their own file counts.",
+      "evidence": "total_files = len(file_reports) + sum(s.files_reviewed for s in child_summaries)",
+      "traceability": {
+        "file": "garlicpress/reduce.py",
+        "line": null,
+        "git_sha": null
+      }
+    },
+    {
+      "finding_id": "reduce-004",
+      "severity": "low",
+      "type": "missing_error_path",
+      "location": "reduce_directory:LNNN",
+      "description": "If file_reports or child_summaries fail to load (e.g., due to network errors), the function may return None silently, causing the parent directory to have incomplete information.",
+      "evidence": "if not file_reports and not child_summaries:\n    return None",
+      "traceability": {
+        "file": "garlicpress/reduce.py",
+        "line": null,
+        "git_sha": null
+      }
+    },
+    {
+      "finding_id": "reduce-005",
+      "severity": "low",
+      "type": "missing_validation",
+      "location": "reduce_directory:LNNN",
+      "description": "The normalization loop for contradictions mutates the data dict in-place, but does not ensure that 'contradictions' exists as a list. If the LLM returns a non-list or missing field, this could crash.",
+      "evidence": "for c in data.get(\"contradictions\", []):",
+      "traceability": {
+        "file": "garlicpress/reduce.py",
+        "line": null,
+        "git_sha": null
+      }
+    },
+    {
+      "finding_id": "reduce-006",
+      "severity": "medium",
+      "type": "missing_error_path",
+      "location": "reduce_directory:LNNN",
+      "description": "When writing the stub summary on final retry failure, the function catches JSONDecodeError and ValidationError but may still fail on other exceptions (e.g., PermissionError writing file). The outer catch-all returns None, potentially leaving directory without a summary.",
+      "evidence": "except (json.JSONDecodeError, ValidationError) as e:\n    ...\nexcept Exception as e:\n    logger.error(\"API error reducing %s: %s\", rel_dir, e)\n    return None",
+      "traceability": {
+        "file": "garlicpress/reduce.py",
+        "line": null,
+        "git_sha": null
+      }
+    },
+    {
+      "finding_id": "reduce-007",
+      "severity": "medium",
+      "type": "race_condition",
+      "location": "reduce_tree:LNNN",
+      "description": "While processing directories bottom-up, if a sibling directory is processed later and writes its own _summary.json, it could be loaded as a child summary by a parent directory that hasn't been processed yet, causing out-of-order aggregation.",
+      "evidence": "dirs_with_content.sort(key=lambda p: len(p.parts), reverse=True)",
+      "traceability": {
+        "file": "garlicpress/reduce.py",
+        "line": null,
+        "git_sha": null
+      }
+    },
+    {
+      "finding_id": "reduce-008",
+      "severity": "low",
+      "type": "interface_mismatch",
+      "location": "_build_reduce_input:LNNN",
+      "description": "The function assumes FileFindingsReport.finding_id and other fields exist but the skeleton shows FileFindingsReport has 'findings' which is a list of Finding objects. The code accesses f.finding_id directly but Finding.finding_id is a string per schema.",
+      "evidence": "for f in r.findings:\n    parts.append(\n        f\"  [{f.finding_id}] {f.severity.value.upper()} {f.type.value} \"\n        f\"@ {f.location}: {f.description}\"\n    )",
+      "traceability": {
+        "file": "garlicpress/reduce.py",
+        "line": null,
+        "git_sha": null
+      }
+    }
+  ],
+  "interfaces_exported": [
+    "_load_file_findings(dir_path: Path) -> list[FileFindingsReport]",
+    "_load_child_summaries(dir_path: Path) -> list[DirectorySummary]",
+    "_build_reduce_input(dir_path: Path, findings_root: Path, file_reports: list[FileFindingsReport], child_summaries: list[DirectorySummary]) -> str",
+    "reduce_directory(dir_path: Path, findings_root: Path, client: LLMClient, config: Config) -> DirectorySummary | None",
+    "reduce_tree(findings_root: Path, client: LLMClient, config: Config) -> list[DirectorySummary]"
+  ],
+  "interfaces_consumed": [
+    "garlicpress.client.LLMClient.complete — what you call from other files",
+    "garlicpress.config.Config.prompt — what you call from other files",
+    "garlicpress.map_agent._extract_json_object — what you call from other files",
+    "garlicpress.map_agent._repair_json_escapes — what you call from other files",
+    "garlicpress.schema.FileFindingsReport — what you call from other files",
+    "garlicpress.schema.DirectorySummary — what you call from other files"
+  ],
+  "explicit_requirements": [
+    "Walks the findings directory bottom-up (leaves first).",
+    "Loads all .json findings files for files directly in that directory.",
+    "Loads any child directory summaries (_summary.json).",
+    "Calls Claude to synthesize contradictions and produce a DirectorySummary.",
+    "Writes <dir>/_summary.json.",
+    "The root-level summary becomes the spine of the final report."
+  ],
+  "implicit_assumptions": [
+    {
+      "assumption": "All JSON files in the directory (except _summary.json) are valid FileFindingsReport JSON.",
+      "confidence": "medium",
+      "risk": "If a non-findings JSON file exists, it will cause validation errors and be skipped with a warning, but processing continues."
+    },
+    {
+      "assumption": "The LLMClient.complete method returns a string that can be post-processed with _extract_json_object and _repair_json_escapes.",
+      "confidence": "high",
+      "risk": "If the LLM returns malformed JSON that cannot be repaired, the reduce will fail after max_retries and write a stub."
+    },
+    {
+      "assumption": "The config.max_retries is >= 0 and config.reduce_max_tokens is appropriate for the model.",
+      "confidence": "high",
+      "risk": "If max_retries is negative or reduce_max_tokens too small, the function may loop forever or produce truncated output."
+    },
+    {
+      "assumption": "File paths are UTF-8 encoded and readable.",
+      "confidence": "high",
+      "risk": "If a file has a different encoding or permissions issue, loading will fail and the file will be skipped."
+    },
+    {
+      "assumption": "The findings_root path is an absolute path and dir_path is a subdirectory of it.",
+      "confidence": "high",
+      "risk": "If dir_path is not under findings_root, relative path calculation will fail with ValueError."
+    },
+    {
+      "assumption": "Child directories are processed before their parents (due to sorting by depth descending).",
+      "confidence": "high",
+      "risk": "If a directory's child is not processed yet (e.g., missing JSON files), parent will have incomplete child_summaries."
+    },
+    {
+      "assumption": "The schema DirectorySummary.model_validate will accept the normalized data dict after manual field coercions.",
+      "confidence": "high",
+      "risk": "If schema changes (e.g., new required fields), validation will fail and reduce will write stub."
+    },
+    {
+      "assumption": "Logger 'garlicpress.reduce' is configured and will not raise exceptions during logging.",
+      "confidence": "high",
+      "risk": "If logging is misconfigured, the function may crash on logging calls."
+    }
+  ],
+  "stable_since": "2026-04-07",
+  "dependencies_changed_since": [],
+  "cross_file_flags": [
+    "reduce.py uses map_agent._extract_json_object and _repair_json_escapes — verify these functions exist and handle edge cases.",
+    "reduce.py uses schema.FileFindingsReport and DirectorySummary — verify fields match (e.g., Finding.finding_id is string, severity.value exists).",
+    "reduce.py assumes config.prompt('reduce') returns a valid system prompt string — verify config.py implements this."
+  ]
+}

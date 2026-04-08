@@ -170,7 +170,12 @@ SKIP_DIRS = {".git", "__pycache__", ".venv", "venv", "node_modules", "dist", "bu
 INCLUDE_EXTENSIONS = {".py", ".ts", ".js", ".go", ".rs", ".java",
                       ".c", ".h", ".cpp", ".cc", ".cxx",
                       ".sh", ".bash",
-                      ".rb", ".swift", ".kt"}
+                      ".rb", ".swift", ".kt",
+                      ".lua", ".ex", ".exs",
+                      ".hs", ".zig", ".nim",
+                      ".jl", ".f", ".f90", ".f95",
+                      ".r", ".R", ".m",
+                      ".fortran", ".ftn"}
 
 
 def collect_source_files(repo_root: Path) -> list[Path]:

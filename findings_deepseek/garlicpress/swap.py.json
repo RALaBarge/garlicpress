@@ -1,0 +1,175 @@
+{
+  "file": "garlicpress/swap.py",
+  "summary": "Agent B for bidirectional swap between spec files and map-phase findings. Loads directory summaries and spec files, builds prompt, calls LLM to produce SwapReport comparing spec expectations against ground truth findings.",
+  "findings": [
+    {
+      "finding_id": "swap-001",
+      "severity": "medium",
+      "type": "missing_error_path",
+      "location": "run_swap:L86-L87",
+      "description": "If JSON parsing fails after retries, the function returns None without saving error details or partial results, making debugging difficult.",
+      "evidence": "if attempt < config.max_retries:\n    input_text += f\"\\n\\n[CORRECTION] Output was invalid: {e}. Re-emit only the JSON object.\"\n    continue\nlogger.error(\"Swap phase failed after %d attempts\", config.max_retries + 1)\nreturn None",
+      "traceability": {
+        "file": "garlicpress/swap.py",
+        "line": 86,
+        "git_sha": null
+      }
+    },
+    {
+      "finding_id": "swap-002",
+      "severity": "medium",
+      "type": "logic_error",
+      "location": "run_swap:L94-L95",
+      "description": "General Exception catch-all swallows all unexpected errors (including KeyboardInterrupt) and returns None, potentially hiding critical failures.",
+      "evidence": "except Exception as e:\n    logger.error(\"API error in swap: %s\", e)\n    return None",
+      "traceability": {
+        "file": "garlicpress/swap.py",
+        "line": 94,
+        "git_sha": null
+      }
+    },
+    {
+      "finding_id": "swap-003",
+      "severity": "medium",
+      "type": "missing_validation",
+      "location": "_load_spec_files:L33-L40",
+      "description": "No validation on spec file size or content length; large spec files could exceed token limits or cause memory issues when building prompt.",
+      "evidence": "if p.exists():\n    try:\n        specs.append((p.name, p.read_text(encoding=\"utf-8\", errors=\"replace\")))\n    except OSError as e:\n        logger.warning(\"Cannot read spec %s: %s\", p, e)",
+      "traceability": {
+        "file": "garlicpress/swap.py",
+        "line": 33,
+        "git_sha": null
+      }
+    },
+    {
+      "finding_id": "swap-004",
+      "severity": "low",
+      "type": "race_condition",
+      "location": "run_swap:L103-L104",
+      "description": "Concurrent writes to the same _swap_report.json file if multiple swap processes run simultaneously could corrupt the output.",
+      "evidence": "out = findings_root / \"_swap_report.json\"\nout.write_text(report.model_dump_json(indent=2), encoding=\"utf-8\")",
+      "traceability": {
+        "file": "garlicpress/swap.py",
+        "line": 103,
+        "git_sha": null
+      }
+    },
+    {
+      "finding_id": "swap-005",
+      "severity": "low",
+      "type": "missing_error_path",
+      "location": "_load_summaries:L19-L26",
+      "description": "Wide exception handler catches all exceptions when loading summaries; individual malformed JSON files cause entire summaries to be skipped silently.",
+      "evidence": "try:\n    data = json.loads(p.read_text(encoding=\"utf-8\"))\n    summaries.append(DirectorySummary.model_validate(data))\nexcept Exception as e:\n    logger.warning(\"Could not load summary %s: %s\", p, e)",
+      "traceability": {
+        "file": "garlicpress/swap.py",
+        "line": 19,
+        "git_sha": null
+      }
+    },
+    {
+      "finding_id": "swap-006",
+      "severity": "medium",
+      "type": "logic_error",
+      "location": "run_swap:L71-L72",
+      "description": "The code strips Markdown code fences naively: if the first line starts with '```' but the last line doesn't end with '```', it removes only the first line, potentially leaving malformed JSON.",
+      "evidence": "if raw.startswith(\"```\"):\n    lines = raw.splitlines()\n    raw = \"\\n\".join(lines[1:-1] if lines[-1].strip() == \"```\" else lines[1:])",
+      "traceability": {
+        "file": "garlicpress/swap.py",
+        "line": 71,
+        "git_sha": null
+      }
+    },
+    {
+      "finding_id": "swap-007",
+      "severity": "low",
+      "type": "missing_validation",
+      "location": "_load_spec_files:L31-L32",
+      "description": "",
+      "evidence": "specs = []\nfor p in spec_paths:\n    if p.exists():",
+      "traceability": {
+        "file": "garlicpress/swap.py",
+        "line": 31,
+        "git_sha": null
+      }
+    }
+  ],
+  "interfaces_exported": [
+    "_load_summaries(findings_root: Path) -> list[DirectorySummary]",
+    "_load_spec_files(spec_paths: list[Path]) -> list[tuple[str, str]]",
+    "_build_swap_input(summaries: list[DirectorySummary], specs: list[tuple[str, str]]) -> str",
+    "run_swap(findings_root: Path, spec_files: list[Path], client: LLMClient, config: Config) -> SwapReport | None"
+  ],
+  "interfaces_consumed": [
+    ".client.LLMClient",
+    ".client.LLMClient.complete",
+    ".config.Config",
+    ".config.Config.prompt",
+    ".config.Config.max_retries",
+    ".config.Config.swap_model",
+    ".config.Config.swap_max_tokens",
+    ".reduce.SUMMARY_FILENAME",
+    ".schema.DirectorySummary",
+    ".schema.SwapReport"
+  ],
+  "explicit_requirements": [
+    "Agent B never reads source code. It reads spec files and reduced directory summaries",
+    "Spec files: CLAUDE.md, EVAL_SPEC.md, .allium files, etc.",
+    "Output: confirmed, contradictions, ambiguous",
+    "ambiguous claims routed to human",
+    "findings_root must contain reduced phase summaries (SUMMARY_FILENAME)",
+    "swap phase skipped if no readable spec files",
+    "JSON output wrapped in markdown code fences may be stripped",
+    "Retry up to config.max_retries times on JSON/validation errors"
+  ],
+  "implicit_assumptions": [
+    {
+      "assumption": "findings_root contains only valid SUMMARY_FILENAME files generated by reduce phase (no unrelated JSON files)",
+      "confidence": "medium",
+      "risk": "If other .json files match SUMMARY_FILENAME pattern, they will be loaded and cause validation errors or pollute summaries list."
+    },
+    {
+      "assumption": "config.prompt(\"swap\") returns a valid system prompt string that instructs LLM to output JSON matching SwapReport schema",
+      "confidence": "high",
+      "risk": "If prompt is malformed or empty, LLM output will be garbage and swap will fail after retries."
+    },
+    {
+      "assumption": "DirectorySummary.contradictions and DirectorySummary.escalated_flags fields are always present (maybe empty lists)",
+      "confidence": "high",
+      "risk": "If DirectorySummary model changes or those fields are missing, _build_swap_input will raise AttributeError."
+    },
+    {
+      "assumption": "Spec files are text files with reasonable encoding (UTF-8); binary or corrupted files will be handled by errors='replace'",
+      "confidence": "high",
+      "risk": "Binary spec files may produce garbage content that pollutes the prompt but won't crash."
+    },
+    {
+      "assumption": "LLMClient.complete will either return a string or raise an exception; it never returns None",
+      "confidence": "high",
+      "risk": "If client returns None, json.loads(None) will raise TypeError, caught as general Exception and swap fails."
+    },
+    {
+      "assumption": "findings_root is writable (for _swap_report.json)",
+      "confidence": "high",
+      "risk": "Permission denied when writing report will raise OSError, caught by general Exception handler, swap fails silently."
+    },
+    {
+      "assumption": "Spec file names (p.name) are unique across the list; duplicates won't cause confusion in spec_names",
+      "confidence": "medium",
+      "risk": "Duplicate spec file names in spec_names list may mislead about which files were actually used."
+    },
+    {
+      "assumption": "DirectorySummary.directory is a string suitable for display in markdown header",
+      "confidence": "high",
+      "risk": "If directory contains backticks or special markdown characters, the prompt formatting may break."
+    }
+  ],
+  "stable_since": "2026-04-07",
+  "dependencies_changed_since": [],
+  "cross_file_flags": [
+    "swap assumes .reduce.SUMMARY_FILENAME is a constant string; verify its value in reduce.py.",
+    "swap assumes .schema.SwapReport.model_validate works with extra fields; verify schema validation behavior.",
+    "swap assumes config has attributes swap_model, swap_max_tokens, max_retries; verify Config class in config.py.",
+    "swap uses .client.LLMClient.complete with specific signature; verify client.py implementation matches."
+  ]
+}

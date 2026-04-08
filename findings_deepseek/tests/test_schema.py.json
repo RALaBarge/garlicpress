@@ -1,0 +1,60 @@
+{
+  "file": "tests/test_schema.py",
+  "summary": "Unit tests for the garlicpress.schema module, specifically testing Pydantic model validation and serialization/deserialization of FileFindingsReport and its components.",
+  "findings": [],
+  "interfaces_exported": [
+    "_minimal_report() -> dict",
+    "test_minimal_report_roundtrip() -> None",
+    "test_report_with_finding() -> None",
+    "test_implicit_assumption_roundtrip() -> None",
+    "test_invalid_severity_raises() -> None"
+  ],
+  "interfaces_consumed": [
+    "garlicpress.schema.FileFindingsReport",
+    "garlicpress.schema.Finding",
+    "garlicpress.schema.FindingType",
+    "garlicpress.schema.ImplicitAssumption",
+    "garlicpress.schema.Severity",
+    "garlicpress.schema.Traceability"
+  ],
+  "explicit_requirements": [
+    "FileFindingsReport.model_validate should accept minimal report dict",
+    "FileFindingsReport.model_dump_json should serialize correctly",
+    "Report with finding should parse severity as Severity.high",
+    "Report with finding should parse type as FindingType.missing_error_path",
+    "Implicit assumption confidence should parse correctly",
+    "Invalid severity should raise an exception"
+  ],
+  "implicit_assumptions": [
+    {
+      "assumption": "The imported schema classes (FileFindingsReport, Finding, ImplicitAssumption, etc.) have correctly defined Pydantic models with appropriate validation.",
+      "confidence": "high",
+      "risk": "Tests will fail if schema definitions are incomplete or contain validation errors, but this is expected test behavior."
+    },
+    {
+      "assumption": "The `_minimal_report()` helper returns a dict that is a valid base for FileFindingsReport.",
+      "confidence": "high",
+      "risk": "If the minimal dict is missing required fields or has incorrect types, all dependent tests will fail."
+    },
+    {
+      "assumption": "Pydantic's model_validate and model_dump_json work as expected with the provided data structures.",
+      "confidence": "high",
+      "risk": "Test failures if Pydantic behavior changes or there are serialization edge cases not covered."
+    },
+    {
+      "assumption": "The test suite runs in an environment where pytest is available and imports from garlicpress.schema succeed.",
+      "confidence": "high",
+      "risk": "Test suite cannot execute, breaking CI/CD."
+    },
+    {
+      "assumption": "The schema enums (Severity, FindingType) have string values that match the test data (e.g., 'high', 'missing_error_path').",
+      "confidence": "medium",
+      "risk": "Test will fail if enum member values differ from the literal strings used in test dicts."
+    }
+  ],
+  "stable_since": "2026-04-07",
+  "dependencies_changed_since": [],
+  "cross_file_flags": [
+    "Tests rely on garlicpress.schema module's exact structure. Verify schema.py findings to ensure no breaking changes to model definitions."
+  ]
+}

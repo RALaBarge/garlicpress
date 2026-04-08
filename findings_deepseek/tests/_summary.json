@@ -1,0 +1,40 @@
+{
+  "directory": "tests",
+  "files_reviewed": 3,
+  "findings_count": {
+    "critical": 0,
+    "high": 0,
+    "medium": 2,
+    "low": 2,
+    "info": 0
+  },
+  "contradictions": [
+    {
+      "severity": "high",
+      "file_a": "tests/test_schema.py",
+      "assumption": "The imported schema classes (FileFindingsReport, Finding, ImplicitAssumption, etc.) have correctly defined Pydantic models with appropriate validation.",
+      "file_b": "tests/test_schema.py",
+      "actual_behavior": "The test 'test_invalid_severity_raises' expects Pydantic to raise a validation error for an invalid severity value. This is a test of the schema's validation, not an assumption that it's always correct.",
+      "description": "This is not a true contradiction but rather a self-consistent test design. The assumption is a premise for the test suite; the test behavior validates that premise. No conflict exists.",
+      "finding_ids": []
+    },
+    {
+      "severity": "medium",
+      "file_a": "tests/test_skeleton.py",
+      "assumption": "_python_signatures() never raises exceptions for valid Python syntax files",
+      "file_b": "tests/test_skeleton.py",
+      "actual_behavior": "Finding [tests-001] states the test doesn't handle cases where _python_signatures() could raise an exception (e.g., syntax error), leading to an unhelpful traceback.",
+      "description": "The test's implicit assumption about the function's robustness (no exceptions) is contradicted by the finding that identifies a missing error path in the test itself. The test's design assumes safety, but its implementation is vulnerable to crashes, undermining test reliability.",
+      "finding_ids": [
+        "tests-001"
+      ]
+    }
+  ],
+  "escalated_flags": [
+    "Tests rely on garlicpress.schema module's exact structure. Verify schema.py findings to ensure no breaking changes to model definitions.",
+    "Test assumes _python_signatures() handles various Python syntax constructs - verify implementation in skeleton.py handles edge cases",
+    "Test assumes _python_imports() extracts both 'import x' and 'from y import z' statements - verify implementation in skeleton.py",
+    "Test assumes collect_source_files() filters by file extension and directory name - verify implementation logic matches test expectations"
+  ],
+  "summary": "The tests directory contains basic unit tests for schema validation and skeleton generation, with 4 total findings (2 medium, 2 low). A key contradiction exists within test_skeleton.py where a test assumes a function won't raise exceptions, but the test's own implementation lacks proper exception handling, creating a reliability risk. All cross-file flags are escalated, as they reference implementations outside this directory (garlicpress.schema and skeleton.py). The test suite's overall health is moderate; it validates core contracts but has gaps in robustness testing and error handling."
+}

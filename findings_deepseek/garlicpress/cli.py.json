@@ -1,0 +1,244 @@
+{
+  "file": "garlicpress/cli.py",
+  "summary": "CLI entry point for garlicpress code review system. Provides commands to run the map, reduce, and swap phases individually or together. Handles orchestration, progress reporting, and result summarization.",
+  "findings": [
+    {
+      "finding_id": "cli-001",
+      "severity": "medium",
+      "type": "missing_error_path",
+      "location": "_get_client:LNNN",
+      "description": "When api_key is None and OPENAI_API_KEY is unset, client uses 'ollama' as the api_key. This may be misinterpreted as an API key by the LLMClient. The LLMClient's initialization behavior is unknown from skeleton, but using a string literal 'ollama' as an API key could cause authentication failures.",
+      "evidence": "resolved = api_key or os.environ.get(\"OPENAI_API_KEY\") or \"ollama\"\nreturn LLMClient(api_key=resolved, base_url=base_url)",
+      "traceability": {
+        "file": "garlicpress/cli.py",
+        "line": null,
+        "git_sha": null
+      }
+    },
+    {
+      "finding_id": "cli-002",
+      "severity": "medium",
+      "type": "missing_error_path",
+      "location": "run:LNNN",
+      "description": "No validation that 'output' directory can be written to. Path.mkdir(parents=True, exist_ok=True) may fail due to permissions or filesystem issues, causing unhandled exception that crashes the CLI.",
+      "evidence": "findings_root = Path(output).resolve()\nfindings_root.mkdir(parents=True, exist_ok=True)",
+      "traceability": {
+        "file": "garlicpress/cli.py",
+        "line": null,
+        "git_sha": null
+      }
+    },
+    {
+      "finding_id": "cli-003",
+      "severity": "low",
+      "type": "logic_error",
+      "location": "_run_all:LNNN",
+      "description": "When building task queue, each task's skeleton_path is set to the same skeleton_path, but this field is not shown in MapTask signature from skeleton.py. Assumes MapTask has a skeleton_path attribute; mismatch with skeleton.",
+      "evidence": "for t in tasks:\n    t.skeleton_path = skeleton_path",
+      "traceability": {
+        "file": "garlicpress/cli.py",
+        "line": null,
+        "git_sha": null
+      }
+    },
+    {
+      "finding_id": "cli-004",
+      "severity": "high",
+      "type": "missing_error_path",
+      "location": "_run_all:LNNN",
+      "description": "No error handling for asyncio.as_completed coroutines that may raise exceptions (e.g., network errors, LLM errors). If any map task fails, the entire result list may contain None values, but exceptions are not caught and logged, potentially crashing the program.",
+      "evidence": "for coro in asyncio.as_completed(coros):\n    result = await coro\n    results.append(result)\n    progress.advance(job)",
+      "traceability": {
+        "file": "garlicpress/cli.py",
+        "line": null,
+        "git_sha": null
+      }
+    },
+    {
+      "finding_id": "cli-005",
+      "severity": "medium",
+      "type": "missing_error_path",
+      "location": "_run_all:LNNN",
+      "description": "No handling for reduce_tree returning empty list or None. Assumes summaries is always a list; if reduce_tree fails, the loop over summaries may crash.",
+      "evidence": "summaries = await reduce_tree(findings_root, client, config)\n...\ntotal_contradictions = sum(len(s.contradictions) for s in summaries)",
+      "traceability": {
+        "file": "garlicpress/cli.py",
+        "line": null,
+        "git_sha": null
+      }
+    },
+    {
+      "finding_id": "cli-006",
+      "severity": "medium",
+      "type": "missing_validation",
+      "location": "_run_all:LNNN",
+      "description": "No validation that spec_files exist before attempting swap. If a spec file path is invalid, run_swap may fail unexpectedly.",
+      "evidence": "spec_paths = [Path(s) for s in config.spec_files]\nswap_report = await run_swap(findings_root, spec_paths, client, config)",
+      "traceability": {
+        "file": "garlicpress/cli.py",
+        "line": null,
+        "git_sha": null
+      }
+    },
+    {
+      "finding_id": "cli-007",
+      "severity": "low",
+      "type": "implicit_assumption_violated",
+      "location": "_print_summary:LNNN",
+      "description": "Assumes all findings have a severity that matches one of the Severity enum values. If a finding has an invalid severity (e.g., due to corrupted data), the by_severity counting loop may miss it or crash.",
+      "evidence": "for f in all_findings if f.severity == sev",
+      "traceability": {
+        "file": "garlicpress/cli.py",
+        "line": null,
+        "git_sha": null
+      }
+    },
+    {
+      "finding_id": "cli-008",
+      "severity": "medium",
+      "type": "resource_leak",
+      "location": "_run_all:LNNN and others",
+      "description": "No cleanup of LLMClient (e.g., closing sessions). The client may hold network connections that are not explicitly closed.",
+      "evidence": "client = _get_client(api_key, base_url)",
+      "traceability": {
+        "file": "garlicpress/cli.py",
+        "line": null,
+        "git_sha": null
+      }
+    },
+    {
+      "finding_id": "cli-009",
+      "severity": "medium",
+      "type": "race_condition",
+      "location": "_run_map_only:LNNN",
+      "description": "Uses asyncio.gather without limiting concurrency beyond semaphore. If tasks are many, all are scheduled at once, potentially causing high memory usage.",
+      "evidence": "results = await asyncio.gather(*[_bounded(t) for t in tasks])",
+      "traceability": {
+        "file": "garlicpress/cli.py",
+        "line": null,
+        "git_sha": null
+      }
+    },
+    {
+      "finding_id": "cli-010",
+      "severity": "low",
+      "type": "interface_mismatch",
+      "location": "reduce_cmd:LNNN",
+      "description": "reduce_cmd signature shows verbose flag but function body is truncated in the provided source. Incomplete function may cause runtime errors.",
+      "evidence": "@click.option(\"--verbose\", \"-v\", i\n… [file truncated at 12000 chars — review first 12000 chars only]",
+      "traceability": {
+        "file": "garlicpress/cli.py",
+        "line": null,
+        "git_sha": null
+      }
+    },
+    {
+      "finding_id": "cli-011",
+      "severity": "low",
+      "type": "missing_error_path",
+      "location": "run:LNNN",
+      "description": "No validation that --concurrency is a positive integer. A value <= 0 could cause semaphore with zero permits, deadlocking the map phase.",
+      "evidence": "@click.option(\"--concurrency\", \"-c\", default=5, show_default=True,\n              help=\"Parallel map workers\")",
+      "traceability": {
+        "file": "garlicpress/cli.py",
+        "line": null,
+        "git_sha": null
+      }
+    }
+  ],
+  "interfaces_exported": [
+    "_get_client(api_key: str | None, base_url: str | None) -> LLMClient",
+    "cli() -> None",
+    "run(repo_path: Path, output: str, concurrency: int, map_model: str, reduce_model: str, swap_model: str, spec_files: tuple[str, ...], skip_swap: bool, changed_only: bool, base_ref: str, base_url: str | None, api_key: str | None, verbose: bool) -> None",
+    "_run_all(repo_root: Path, findings_root: Path, config: Config, skip_swap: bool, api_key: str | None, base_url: str | None) -> None",
+    "_print_summary(results, summaries, swap_report, map_s, reduce_s, swap_s)",
+    "map_cmd(repo_path, output, concurrency, model, changed_only, base_ref, base_url, api_key, verbose)",
+    "_run_map_only(repo_root, findings_root, config, api_key, base_url)",
+    "reduce_cmd(findings_dir, model, base_url, api_key, verbose)",
+    "_run_reduce_only(findings_root, config, api_key, base_url)",
+    "swap_cmd(findings_dir, spec_files, model, base_url, api_key, verbose)",
+    "_run_swap_only(findings_root, config, api_key, base_url)",
+    "_bounded(task)"
+  ],
+  "interfaces_consumed": [
+    "client.LLMClient — what you call from other files",
+    "config.Config",
+    "map_agent.run_map_agent",
+    "queue.build_queue",
+    "reduce.reduce_tree",
+    "schema.FinalReport",
+    "schema.Severity",
+    "skeleton.build_skeleton",
+    "skeleton.collect_source_files",
+    "skeleton.write_skeleton",
+    "swap.run_swap"
+  ],
+  "explicit_requirements": [
+    "CLI must support three phases: map, reduce, swap",
+    "Output directory defaults to 'findings'",
+    "Default concurrency is 5",
+    "Default models are 'gemma3:4b'",
+    "If skip_swap is True or no spec files, skip swap phase",
+    "Changed-only mode compares against base_ref (default HEAD~1)",
+    "API key reads from OPENAI_API_KEY env var if not provided",
+    "Base URL defaults to http://localhost:11434/v1",
+    "Verbose flag increases logging level to INFO"
+  ],
+  "implicit_assumptions": [
+    {
+      "assumption": "LLMClient can be initialized with api_key='ollama' and base_url=None and will correctly connect to a local Ollama instance.",
+      "confidence": "medium",
+      "risk": "If LLMClient expects a valid API key for Ollama or treats 'ollama' as a literal key, authentication may fail, causing map/reduce/swap phases to fail."
+    },
+    {
+      "assumption": "collect_source_files returns a list of valid source files; no empty list handling.",
+      "confidence": "medium",
+      "risk": "If no source files found, skeleton_text may be empty, causing map agent to receive empty context."
+    },
+    {
+      "assumption": "build_queue returns tasks that have a skeleton_path attribute (or at least can have it assigned).",
+      "confidence": "high",
+      "risk": "AttributeError if MapTask does not have skeleton_path, breaking map phase."
+    },
+    {
+      "assumption": "run_map_agent, reduce_tree, run_swap are async and will not raise exceptions that crash the whole pipeline.",
+      "confidence": "low",
+      "risk": "Unhandled exceptions in any phase cause CLI to crash without informative error messages."
+    },
+    {
+      "assumption": "findings_root directory is writable and has enough space for all output files.",
+      "confidence": "medium",
+      "risk": "Permission errors or disk full errors cause crashes mid-run."
+    },
+    {
+      "assumption": "All modules (client, config, map_agent, queue, reduce, schema, skeleton, swap) are already imported and available.",
+      "confidence": "high",
+      "risk": "Import errors at runtime if dependencies missing."
+    },
+    {
+      "assumption": "asyncio event loop is available and not already running (cli uses asyncio.run).",
+      "confidence": "high",
+      "risk": "If called from within an existing event loop (e.g., in a Jupyter notebook), RuntimeError may occur."
+    },
+    {
+      "assumption": "The repo_path is a git repository when changed_only=True.",
+      "confidence": "medium",
+      "risk": "If not a git repo, git operations in queue.py may fail, causing build_queue to raise exceptions."
+    },
+    {
+      "assumption": "spec_files are readable text files.",
+      "confidence": "medium",
+      "risk": "If spec file is binary or unreadable, swap phase may fail or produce garbage input."
+    }
+  ],
+  "stable_since": "2026-04-07",
+  "dependencies_changed_since": [],
+  "cross_file_flags": [
+    "cli assumes MapTask has skeleton_path attribute — verify in queue.py that MapTask defines it.",
+    "cli assumes LLMClient.__init__ accepts api_key='ollama' as valid — verify in client.py initialization logic.",
+    "cli assumes reduce_tree returns list[DirectorySummary]; verify reduce.py signature matches.",
+    "cli assumes run_swap returns SwapReport | None; verify swap.py signature.",
+    "cli assumes collect_source_files returns list[Path]; verify skeleton.py signature.",
+    "cli assumes build_queue returns list[MapTask]; verify queue.py signature."
+  ]
+}
