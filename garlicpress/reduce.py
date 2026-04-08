@@ -117,6 +117,7 @@ async def reduce_directory(
     file_reports = _load_file_findings(dir_path)
     child_summaries = _load_child_summaries(dir_path)
 
+    # Guard against empty findings
     if not file_reports and not child_summaries:
         return None
 
