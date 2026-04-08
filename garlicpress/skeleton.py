@@ -143,12 +143,65 @@ _PATTERNS = {
     # Nim
     ".nim": re.compile(r"^\s*(?:proc|func|method|macro|template|type)\s+\w+", re.M),
     # Haskell
-    ".hs": re.compile(r"^[a-z]\w*\s*::", re.M),
+    ".hs": re.compile(r"^[a-z]\w*\s*::|^[a-z]\w*\s*\w+\s*=", re.M),
     # Lua
     ".lua": re.compile(r"^\s*(?:local\s+)?function\s+[\w.]+\s*\(", re.M),
     # Elixir
     ".ex": re.compile(r"^\s*(?:def|defp|defmodule|defmacro)\s+\w+", re.M),
     ".exs": re.compile(r"^\s*(?:def|defp|defmodule|defmacro)\s+\w+", re.M),
+    # ========== NEW LANGUAGES (20+) ==========
+    # C# — classes, interfaces, structs, methods
+    ".cs": re.compile(r"^\s*(?:public|private|protected|internal)?\s*(?:static\s+)?(?:class|interface|struct|enum|record)\s+\w+|^\s*(?:public|private|protected|internal)?\s*(?:static\s+)?(?:async\s+)?(?:void|[\w\[\]]+)\s+\w+\s*\(", re.M),
+    # PHP — functions and classes
+    ".php": re.compile(r"^(?:public|private|protected)?\s*(?:static\s+)?(?:function|class|interface|trait)\s+\w+", re.M),
+    # Perl — subroutines
+    ".pl": re.compile(r"^sub\s+\w+", re.M),
+    ".pm": re.compile(r"^sub\s+\w+", re.M),
+    # Scala — classes, objects, traits, defs
+    ".scala": re.compile(r"^\s*(?:class|object|trait|def|case\s+class|sealed\s+class)\s+\w+", re.M),
+    # Clojure — defn, defmacro, deftype, etc.
+    ".clj": re.compile(r"^\s*\((?:defn|defmacro|deftype|defprotocol|defrecord)\s+\w+", re.M),
+    ".cljs": re.compile(r"^\s*\((?:defn|defmacro|deftype|defprotocol|defrecord)\s+\w+", re.M),
+    # Groovy — methods and classes
+    ".groovy": re.compile(r"^\s*(?:public|private|protected)?\s*(?:static\s+)?(?:def|class|interface|trait)\s+\w+", re.M),
+    # Ada — procedures and functions
+    ".ada": re.compile(r"^\s*(?:procedure|function)\s+\w+", re.M),
+    ".adb": re.compile(r"^\s*(?:procedure|function)\s+\w+", re.M),
+    # D — functions and classes
+    ".d": re.compile(r"^\s*(?:public\s+|private\s+|protected\s+)?(?:class|struct|interface|enum|void|[\w\[\]]+)\s+\w+\s*(?:\(|:=)", re.M),
+    # OCaml — let, type, exception
+    ".ml": re.compile(r"^\s*(?:let|type|exception|val)\s+\w+", re.M),
+    ".mli": re.compile(r"^\s*(?:let|type|exception|val)\s+\w+", re.M),
+    # F# — let, type, member
+    ".fs": re.compile(r"^\s*(?:let|type|member|exception|val)\s+\w+", re.M),
+    ".fsi": re.compile(r"^\s*(?:let|type|member|exception|val)\s+\w+", re.M),
+    # Scheme — defun, define, define-macro
+    ".scm": re.compile(r"^\s*\((?:define|define-macro|defun)\s+[\w\-]+", re.M),
+    # Erlang — functions (name followed by parentheses at module level)
+    ".erl": re.compile(r"^[a-z]\w*\s*\([^)]*\)\s*->", re.M),
+    # Assembly (NASM) — labels (function entry points)
+    ".asm": re.compile(r"^[a-zA-Z_]\w*:", re.M),
+    # Verilog — modules, functions
+    ".v": re.compile(r"^\s*(?:module|function|task)\s+\w+", re.M),
+    # VHDL — entities, architectures, procedures, functions
+    ".vhdl": re.compile(r"^\s*(?:entity|architecture|procedure|function)\s+\w+", re.M),
+    ".vhd": re.compile(r"^\s*(?:entity|architecture|procedure|function)\s+\w+", re.M),
+    # PowerShell — function definitions
+    ".ps1": re.compile(r"^\s*(?:function|class|enum)\s+\w+", re.M),
+    # Batch — labels (entry points)
+    ".bat": re.compile(r"^:[a-zA-Z_]\w*", re.M),
+    # Fish shell — function definitions
+    ".fish": re.compile(r"^\s*function\s+\w+", re.M),
+    # COBOL — paragraphs and sections
+    ".cob": re.compile(r"^\s*[A-Z0-9][A-Z0-9\-]*\s+(?:SECTION|\.)", re.M | re.I),
+    # Objective-C — interfaces, implementations, methods
+    ".m": re.compile(r"^[-+]\s*\([\w\s\*]+\)\s*\w+|^@interface\s+\w+|^@implementation\s+\w+", re.M),
+    # Dart — classes, functions
+    ".dart": re.compile(r"^\s*(?:class|interface|abstract\s+class|(?:(?:async\s+)?[\w\[\]]+\s+)?\w+\s*\()", re.M),
+    # Crystal — classes, defs, modules
+    ".cr": re.compile(r"^\s*(?:class|def|module|struct|enum|macro)\s+\w+", re.M),
+    # Racket — define, define-macro, define-struct
+    ".rkt": re.compile(r"^\s*\((?:define|define-macro|define-struct|define-syntax)\s+[\w\-]+", re.M),
 }
 
 def _generic_signatures(path: Path) -> list[str]:
@@ -175,7 +228,17 @@ INCLUDE_EXTENSIONS = {".py", ".ts", ".js", ".go", ".rs", ".java",
                       ".hs", ".zig", ".nim",
                       ".jl", ".f", ".f90", ".f95",
                       ".r", ".R", ".m",
-                      ".fortran", ".ftn"}
+                      ".fortran", ".ftn",
+                      # New languages
+                      ".cs", ".php", ".pl", ".pm",
+                      ".scala", ".clj", ".cljs",
+                      ".groovy", ".ada", ".adb",
+                      ".d", ".ml", ".mli",
+                      ".fs", ".fsi", ".scm",
+                      ".erl", ".asm", ".v",
+                      ".vhdl", ".vhd", ".ps1",
+                      ".bat", ".fish", ".cob",
+                      ".dart", ".cr", ".rkt"}
 
 
 def collect_source_files(repo_root: Path) -> list[Path]:
