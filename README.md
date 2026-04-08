@@ -171,6 +171,25 @@ Notable cross-file contradictions detected:
       --output findings/
 ```
 
+## Agentic mode (coming)
+
+garlicpress map agents can run as full agentic turns against a [BeigeBox](https://github.com/RALaBarge/beigebox) backend instead of single-shot completions. With the `repo` MCP tool registered, agents pull file context on demand — no pre-stuffed skeleton, no truncation. Each agent can follow an assumption across files before emitting a finding.
+
+```bash
+garlicpress run /path/to/repo --spec CLAUDE.md \
+  --base-url http://localhost:1337/v1 \
+  --api-key YOUR_KEY \
+  --agentic   # coming soon
+```
+
+## Acknowledgements
+
+garlicpress uses [Allium](https://github.com/RALaBarge/amf) spec file conventions (`.allium` files) for the swap phase. Pass any `.allium` spec alongside `CLAUDE.md` to give Agent B richer structured expectations to check against:
+
+```bash
+garlicpress run /repo --spec CLAUDE.md --spec .allium
+```
+
 ## License
 
 MIT
