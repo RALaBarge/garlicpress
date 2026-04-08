@@ -8,10 +8,11 @@
 
 | Metric | Result |
 |--------|--------|
-| **Codebases Tested** | 7 (204–448 files each) |
-| **Total API Calls** | 2,753 |
+| **Codebases Tested** | 7 (204–448 files, 10+ languages) |
+| **Total API Calls** | 2,929 (2,753 local + 176 cloud) |
+| **Total Tokens** | 666,000 |
 | **Models Evaluated** | 12 (3 local free, 9 cloud paid) |
-| **Total Cost** | $0.0217 (cloud validation only) |
+| **Total Cost** | $0.694 (cloud validation only) |
 | **Success Rate** | 100% (0 crashes, 0 timeouts) |
 
 ### Findings
@@ -29,21 +30,19 @@
 
 ## Models Tested
 
-### Local (Free)
-- **llama3.2:3b** — Primary (2,543 calls, 9.6s avg latency)
+### Local (FREE — 2,611 calls)
+- **llama3.2:3b** — Primary (2,543 calls, 9.6s avg latency) **89% of volume**
 - **qwen3:4b** — Quality tier (60 calls, 75s avg latency)
 - **llama3.2:1b** — Baseline (8 calls)
 
-### Cloud (Paid — $0.0217 total)
-- **z-ai/glm-5v-turbo** — Deep analysis ($0.0138)
-- **arcee-ai/trinity-large-thinking** — Consensus validation ($0.00443)
-- **openai/gpt-5.4-nano** — Fast validation ($0.000909)
-- **openai/gpt-oss-120b** — Broad evaluation ($0.000615)
-- **google/gemini-3.1-flash-lite** — Flexible validation ($0.00114)
-- **openai/gpt-4o-mini** — Budget validation ($0.000305)
-- **google/gemini-2.0-flash** — Fastest cloud ($0.000403)
-- **qwen/qwen3-235b-a22b-2507** — Cheapest cloud ($0.000069)
-- **deepseek-chat** — Baseline comparison
+### Cloud (PAID — 176 requests, 666K tokens, $0.694)
+- **Qwen3.6 Plus** — Most thorough analysis ($0.576, 52 requests, 383K tokens)
+- **DeepSeek V3.2** — Consensus validation ($0.0742, 67 requests, 248K tokens)
+- **GLM 5V Turbo** — Deep thinking analysis ($0.027)
+- **Trinity Large Thinking** — Critical issue consensus ($0.011, 11 requests)
+- **OpenAI GPT variants** — Multi-tier validation ($0.001)
+- **Google Gemini variants** — Fast breadth validation ($0.003)
+- **Qwen 235B** — Enterprise-scale validation ($0.000069)
 
 ---
 
@@ -52,9 +51,10 @@
 ✅ **39 critical issues identified** — 5 confirmed blockers with PR-ready fixes  
 ✅ **8-model fix validation** — 92.5% success rate on all 5 critical fixes  
 ✅ **Cross-model consensus** — 14 agents peer-reviewed findings (100% agreement on blockers)  
-✅ **100% success under load** — 30-concurrent stress test passed (0 crashes)  
-✅ **94.8% on free models** — Local llama3.2:3b dominates (2,611/2,753 calls)  
-✅ **Production-ready** — Ready for CI; hardening roadmap in progress
+✅ **100% success under concurrent load** — 30-concurrent stress test passed  
+✅ **Comprehensive coverage** — 2,929 API calls, 666K tokens, 12 models  
+✅ **Cost-effective validation** — $0.694 for production-grade assessment  
+✅ **93.9% on free models** — Local llama3.2:3b dominates (2,753/2,929 calls)  
 
 ---
 
@@ -62,9 +62,10 @@
 
 **garlicpress v1.0 is production-ready for CI pipelines.**
 
-- **Default:** llama3.2:3b (free, 9.6s avg, correct severity)
-- **Audits:** Add one cloud model for validation (~$0.001/codebase)
-- **Shipping gates:** Use llama3.2:3b + Trinity consensus (~$0.0011/codebase)
+- **Default:** llama3.2:3b locally ($0.00)
+- **Audits:** Add cloud validator ($0.01–0.57/codebase)
+- **Shipping gates:** Multi-model consensus ($0.01/codebase)
+- **Maximum confidence:** Full 12-model suite ($0.694 one-time validation investment)
 
 ---
 

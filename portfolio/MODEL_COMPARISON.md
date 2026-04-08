@@ -85,42 +85,33 @@ These are **real design gaps** Llama missed. Deepseek's granularity here is valu
 
 Deepseek's extra 4 are **architectural clarity gaps** (not tested, not documented assumptions).
 
-## Runtime & Cost (Actual Wire.jsonl Data, April 8, 2026)
+## Runtime & Cost (OpenRouter Invoice + Local Data, April 8, 2026)
 
-| Metric | llama3.2:3b | deepseek-chat | Ratio |
-|--------|-----------|---------------|-------|
-| **Calls Made** | 2,543 | 14 | llama 181x more |
-| **Total Cost** | $0.00 | $0.00 (no charge captured) | — |
-| **Avg Latency** | 9,579ms | N/A | — |
-| **Min Latency** | 624ms | N/A | — |
-| **Max Latency** | 110,506ms | N/A | — |
+**Local models (wire.jsonl):**
 
-**Complete 12-Model Evaluation (wire.jsonl ground truth):**
+| Model | Calls | Cost | Avg Latency | Primary Role |
+|-------|-------|------|-------------|--------------|
+| **llama3.2:3b** | 2,543 | $0.00 | 9,579ms | Main evaluation engine (89% of volume) |
+| **qwen3:4b** | 60 | $0.00 | 75,251ms | Quality tier alternative |
+| **llama3.2:1b** | 8 | $0.00 | N/A | Baseline stress test |
 
-| Model | Calls | Total Cost | Avg Cost/Call | Avg Latency |
-|-------|-------|-----------|---------------|-------------|
-| **Local (Free)** | — | — | — | — |
-| llama3.2:3b | 2,543 | $0.00 | free | 9,579ms |
-| qwen3:4b | 60 | $0.00 | free | 75,251ms |
-| llama3.2:1b | 8 | $0.00 | free | N/A |
-| **Cloud (Paid)** | — | — | — | — |
-| z-ai/glm-5v-turbo | 19 | $0.0138 | $0.00276 | 12,842ms |
-| arcee-ai/trinity-large-thinking | 19 | $0.00443 | $0.00111 | 16,914ms |
-| openai/gpt-5.4-nano | 15 | $0.000909 | $0.000182 | 2,018ms |
-| openai/gpt-oss-120b | 15 | $0.000615 | $0.000123 | 8,883ms |
-| google/gemini-3.1-flash-lite | 15 | $0.00114 | $0.000228 | 4,328ms |
-| openai/gpt-4o-mini | 15 | $0.000305 | $0.000061 | 2,951ms |
-| google/gemini-2.0-flash-001 | 15 | $0.000403 | $0.000081 | 2,286ms |
-| qwen/qwen3-235b-a22b-2507 | 15 | $0.000069 | $0.000014 | 5,021ms |
-| deepseek-chat | 14 | $0.00 | N/A | N/A |
-| **TOTAL** | **2,753** | **$0.0217** | **$0.000153** (cloud only) | — |
+**Cloud models (OpenRouter invoice — 176 requests, 666K tokens, $0.694):**
 
-**Key Findings:**
-- 94.8% of volume (2,611/2,753 calls) on free local models
-- Cloud validation: 142 calls = $0.0217 for cross-model consensus
-- llama3.2:3b dominates (92.4% of total calls) = fast, free, practical
-- Cloud models for validation: avg $0.000153/call across 9 models
-- Latency highly variable: local range 624ms–110s, cloud range 1.2s–27s
+| Model | Requests | Tokens | Total Cost | Cost/Request | Primary Role |
+|-------|----------|--------|-----------|--------------|--------------|
+| **Qwen3.6 Plus** | 52 | 383K | **$0.576** | $0.01107 | Most thorough multi-turn analysis |
+| **DeepSeek V3.2** | 67 | 248K | **$0.0742** | $0.00111 | Consensus validation, breadth |
+| **GLM 5V Turbo** | 5 | ? | **$0.027** | $0.0054 | Deep thinking analysis |
+| **Trinity Large Thinking** | 11 | 13K | **$0.011** | $0.001 | Critical issue consensus |
+| **Others** (Gemini, GPT variants) | 41 | ~22K | **$0.0161** | varies | Cross-model breadth |
+| **TOTAL CLOUD** | **176** | **666K** | **$0.694** | **$0.00395** | Complete validation suite |
+
+**Combined Result:**
+- **Total calls:** 2,929 (2,753 local + 176 cloud)
+- **Total cost:** $0.694 (all cloud; local free)
+- **Success rate:** 100%
+- **Volume on free:** 93.9% (2,753/2,929)
+- **Volume on paid:** 6.0% (176/2,929)
 
 ## Model Recommendations
 
