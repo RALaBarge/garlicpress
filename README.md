@@ -186,7 +186,7 @@ garlicpress run /path/to/repo --spec CLAUDE.md \
 
 ## Acknowledgements
 
-garlicpress uses [Allium](https://github.com/RALaBarge/amf) spec file conventions (`.allium` files) for the swap phase. Pass any `.allium` spec alongside `CLAUDE.md` to give Agent B richer structured expectations to check against:
+garlicpress uses [Allium](https://github.com/juxt/allium) spec file conventions (`.allium` files) for the swap phase. Pass any `.allium` spec alongside `CLAUDE.md` to give Agent B richer structured expectations to check against:
 
 ```bash
 garlicpress run /repo --spec CLAUDE.md --spec .allium
