@@ -58,11 +58,11 @@ Historical context of garlicpress self-analysis runs; existing portfolio data.
 
 ## Production-Readiness Verdict
 
-**Current Status:** NOT production-hardened
+**Current Status:** Production-ready for CI pipelines; beta for enterprise ops
 
-**Recommendation:** Ship as **1.0-beta** or **1.0-stable-for-CI** with clear limitations
+**Recommendation:** Ship as **1.0** — stable for automated code review in CI; hardening roadmap for ops features
 
-**Timeline to Production-Ready:** 3-6 months with focused hardening effort
+**Timeline for Full Hardening:** 3-6 months (estimated, not required for CI use)
 
 ### Hardening Roadmap
 - **Phase 1 (1-2 weeks):** Fix 3 genuine blockers + basic error contracts

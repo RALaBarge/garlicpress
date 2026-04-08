@@ -38,6 +38,12 @@ This directory contains all evaluation data, benchmarks, and analysis for garlic
   - Speed/cost tradeoffs
   - Model recommendations (local vs cloud)
 
+- **[CROSS_MODEL_VALIDATION.md](CROSS_MODEL_VALIDATION.md)** — Peer-review validation
+  - 14 agents reviewing each other's findings
+  - 30-concurrent stress test on BeigeBox
+  - Per-repo verdict (real vs false positives)
+  - Infrastructure stability assessment
+
 ### 📅 Development Timeline
 - **[TIMELINE.md](TIMELINE.md)** — Real timeline sourced from git history
   - April 7, 11:25 — Init
