@@ -153,6 +153,8 @@ Map 1041.7s · Reduce 219.1s · Swap 15.9s
 | low | 220 |
 | info | 11 |
 
+(Sheesh!  Did an LLM write this or something?>?(Yes.))
+
 Notable cross-file contradictions detected:
 - **`harness_orchestrator.py` ↔ `agentic_scorer.py`** — `content` field assumed always present; scorer silently drops turns when missing
 - **`__init__.py` / `base.py` / `openrouter.py`** — `forward()` method contract mismatches across backend implementations
