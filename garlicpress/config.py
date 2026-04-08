@@ -27,6 +27,11 @@ class Config:
     # Prompts directory (defaults to package prompts/)
     prompts_dir: Path | None = None
 
+    def __post_init__(self) -> None:
+        """Validate configuration on instantiation."""
+        if self.prompts_dir and not self.prompts_dir.is_dir():
+            raise NotADirectoryError(f"Prompts directory not found or is not a directory: {self.prompts_dir}")
+
     def prompt(self, name: str) -> str:
         """Load a prompt template by name (e.g. 'map', 'reduce', 'swap')."""
         if self.prompts_dir:
