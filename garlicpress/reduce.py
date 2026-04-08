@@ -16,10 +16,11 @@ import json
 import logging
 from pathlib import Path
 
-import anthropic
 from pydantic import ValidationError
 
+from .client import LLMClient
 from .config import Config
+from .map_agent import _extract_json_object, _repair_json_escapes
 from .schema import DirectorySummary, FileFindingsReport
 
 logger = logging.getLogger("garlicpress.reduce")
@@ -109,7 +110,7 @@ def _build_reduce_input(
 async def reduce_directory(
     dir_path: Path,
     findings_root: Path,
-    client: anthropic.AsyncAnthropic,
+    client: LLMClient,
     config: Config,
 ) -> DirectorySummary | None:
     """Reduce a single directory and write its _summary.json."""
@@ -127,20 +128,43 @@ async def reduce_directory(
 
     for attempt in range(config.max_retries + 1):
         try:
-            response = await client.messages.create(
+            raw = await client.complete(
                 model=config.reduce_model,
                 max_tokens=config.reduce_max_tokens,
                 system=system_prompt,
                 messages=[{"role": "user", "content": input_text}],
             )
-            raw = response.content[0].text.strip()
             if raw.startswith("```"):
                 lines = raw.splitlines()
                 raw = "\n".join(lines[1:-1] if lines[-1].strip() == "```" else lines[1:])
 
+            raw = _extract_json_object(raw)
+            raw = _repair_json_escapes(raw)
+
             data = json.loads(raw)
             data["directory"] = rel_dir
             data["files_reviewed"] = total_files
+
+            # Normalize contradictions — coerce None strings to ""
+            for c in data.get("contradictions", []):
+                if not isinstance(c, dict):
+                    continue
+                for field in ("file_a", "file_b", "assumption", "actual_behavior", "description"):
+                    if not isinstance(c.get(field), str):
+                        c[field] = str(c.get(field) or "")
+                if not isinstance(c.get("finding_ids"), list):
+                    c["finding_ids"] = []
+
+            # Normalize other list/string fields
+            for field in ("escalated_flags",):
+                val = data.get(field)
+                if isinstance(val, str):
+                    data[field] = [val] if val else []
+                elif not isinstance(val, list):
+                    data[field] = []
+
+            if not isinstance(data.get("summary"), str) or not data.get("summary"):
+                data["summary"] = "(no summary)"
 
             summary = DirectorySummary.model_validate(data)
             out = dir_path / SUMMARY_FILENAME
@@ -153,10 +177,17 @@ async def reduce_directory(
             if attempt < config.max_retries:
                 input_text += f"\n\n[CORRECTION] Output was invalid: {e}. Re-emit only the JSON object."
                 continue
-            logger.error("Giving up on reduce for %s", rel_dir)
-            return None
+            logger.error("Giving up on reduce for %s — writing stub summary", rel_dir)
+            stub = DirectorySummary(
+                directory=rel_dir,
+                files_reviewed=total_files,
+                summary="(reduce failed — parse error on all attempts)",
+            )
+            out = dir_path / SUMMARY_FILENAME
+            out.write_text(stub.model_dump_json(indent=2), encoding="utf-8")
+            return stub
 
-        except anthropic.APIError as e:
+        except Exception as e:
             logger.error("API error reducing %s: %s", rel_dir, e)
             return None
 
@@ -165,7 +196,7 @@ async def reduce_directory(
 
 async def reduce_tree(
     findings_root: Path,
-    client: anthropic.AsyncAnthropic,
+    client: LLMClient,
     config: Config,
 ) -> list[DirectorySummary]:
     """

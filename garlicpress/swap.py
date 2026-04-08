@@ -17,9 +17,9 @@ import json
 import logging
 from pathlib import Path
 
-import anthropic
 from pydantic import ValidationError
 
+from .client import LLMClient
 from .config import Config
 from .reduce import SUMMARY_FILENAME
 from .schema import DirectorySummary, SwapReport
@@ -86,7 +86,7 @@ def _build_swap_input(
 async def run_swap(
     findings_root: Path,
     spec_files: list[Path],
-    client: anthropic.AsyncAnthropic,
+    client: LLMClient,
     config: Config,
 ) -> SwapReport | None:
     """Run Agent B against the reduced findings and spec files."""
@@ -106,13 +106,12 @@ async def run_swap(
 
     for attempt in range(config.max_retries + 1):
         try:
-            response = await client.messages.create(
+            raw = await client.complete(
                 model=config.swap_model,
                 max_tokens=config.swap_max_tokens,
                 system=system_prompt,
                 messages=[{"role": "user", "content": input_text}],
             )
-            raw = response.content[0].text.strip()
             if raw.startswith("```"):
                 lines = raw.splitlines()
                 raw = "\n".join(lines[1:-1] if lines[-1].strip() == "```" else lines[1:])
@@ -139,7 +138,7 @@ async def run_swap(
             logger.error("Swap phase failed after %d attempts", config.max_retries + 1)
             return None
 
-        except anthropic.APIError as e:
+        except Exception as e:
             logger.error("API error in swap: %s", e)
             return None
 

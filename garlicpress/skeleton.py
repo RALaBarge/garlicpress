@@ -133,7 +133,7 @@ def _generic_signatures(path: Path) -> list[str]:
 # Public API
 # ---------------------------------------------------------------------------
 
-SKIP_DIRS = {".git", "__pycache__", ".venv", "venv", "node_modules", "dist", "build", ".mypy_cache"}
+SKIP_DIRS = {".git", "__pycache__", ".venv", "venv", "node_modules", "dist", "build", ".mypy_cache", ".claude", "findings", "skills"}
 INCLUDE_EXTENSIONS = {".py", ".ts", ".js", ".go", ".rs", ".java"}
 
 

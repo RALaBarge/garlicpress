@@ -15,12 +15,12 @@ import os
 import time
 from pathlib import Path
 
-import anthropic
 import click
 from rich.console import Console
 from rich.progress import BarColumn, Progress, SpinnerColumn, TextColumn, TimeElapsedColumn
 from rich.table import Table
 
+from .client import LLMClient
 from .config import Config
 from .map_agent import run_map_agent
 from .queue import build_queue
@@ -34,11 +34,9 @@ logging.basicConfig(level=logging.WARNING, format="%(name)s: %(message)s")
 logger = logging.getLogger("garlicpress")
 
 
-def _get_client() -> anthropic.AsyncAnthropic:
-    api_key = os.environ.get("ANTHROPIC_API_KEY")
-    if not api_key:
-        raise click.ClickException("ANTHROPIC_API_KEY environment variable not set")
-    return anthropic.AsyncAnthropic(api_key=api_key)
+def _get_client(api_key: str | None, base_url: str | None) -> LLMClient:
+    resolved = api_key or os.environ.get("OPENAI_API_KEY") or "ollama"
+    return LLMClient(api_key=resolved, base_url=base_url)
 
 
 @click.group()
@@ -57,9 +55,9 @@ def cli() -> None:
               help="Directory to write findings into")
 @click.option("--concurrency", "-c", default=5, show_default=True,
               help="Parallel map workers")
-@click.option("--map-model", default="claude-sonnet-4-6", show_default=True)
-@click.option("--reduce-model", default="claude-sonnet-4-6", show_default=True)
-@click.option("--swap-model", default="claude-sonnet-4-6", show_default=True)
+@click.option("--map-model", default="gemma3:4b", show_default=True)
+@click.option("--reduce-model", default="gemma3:4b", show_default=True)
+@click.option("--swap-model", default="gemma3:4b", show_default=True)
 @click.option("--spec", "-s", "spec_files", multiple=True,
               help="Spec files for Agent B swap (CLAUDE.md, .allium, etc.)")
 @click.option("--skip-swap", is_flag=True, help="Skip the bidirectional swap phase")
@@ -67,6 +65,9 @@ def cli() -> None:
               help="Only review files changed since --base-ref")
 @click.option("--base-ref", default="HEAD~1", show_default=True,
               help="Git ref for --changed-only diff base")
+@click.option("--base-url", default=None,
+              help="Backend base URL (default: http://localhost:11434/v1)")
+@click.option("--api-key", default=None, help="API key override (reads OPENAI_API_KEY if omitted)")
 @click.option("--verbose", "-v", is_flag=True)
 def run(
     repo_path: Path,
@@ -79,6 +80,8 @@ def run(
     skip_swap: bool,
     changed_only: bool,
     base_ref: str,
+    base_url: str | None,
+    api_key: str | None,
     verbose: bool,
 ) -> None:
     """Full run: map all files, reduce, then swap against spec."""
@@ -98,7 +101,7 @@ def run(
     findings_root = Path(output).resolve()
     findings_root.mkdir(parents=True, exist_ok=True)
 
-    asyncio.run(_run_all(repo_path.resolve(), findings_root, config, skip_swap))
+    asyncio.run(_run_all(repo_path.resolve(), findings_root, config, skip_swap, api_key, base_url))
 
 
 async def _run_all(
@@ -106,8 +109,10 @@ async def _run_all(
     findings_root: Path,
     config: Config,
     skip_swap: bool,
+    api_key: str | None = None,
+    base_url: str | None = None,
 ) -> None:
-    client = _get_client()
+    client = _get_client(api_key, base_url)
 
     # ------------------------------------------------------------------ map
     console.print(f"\n[bold cyan]garlicpress[/bold cyan] → [bold]{repo_root}[/bold]\n")
@@ -251,22 +256,24 @@ def _print_summary(results, summaries, swap_report, map_s, reduce_s, swap_s):
 @click.argument("repo_path", type=click.Path(exists=True, file_okay=False, path_type=Path))
 @click.option("--output", "-o", default="findings", show_default=True)
 @click.option("--concurrency", "-c", default=5, show_default=True)
-@click.option("--model", default="claude-sonnet-4-6", show_default=True)
+@click.option("--model", default="gemma3:4b", show_default=True)
 @click.option("--changed-only", is_flag=True)
 @click.option("--base-ref", default="HEAD~1", show_default=True)
+@click.option("--base-url", default=None)
+@click.option("--api-key", default=None)
 @click.option("--verbose", "-v", is_flag=True)
-def map_cmd(repo_path, output, concurrency, model, changed_only, base_ref, verbose):
+def map_cmd(repo_path, output, concurrency, model, changed_only, base_ref, base_url, api_key, verbose):
     """Run the map phase only."""
     if verbose:
         logging.getLogger("garlicpress").setLevel(logging.INFO)
     config = Config(map_model=model, concurrency=concurrency, changed_only=changed_only, base_ref=base_ref)
     findings_root = Path(output).resolve()
     findings_root.mkdir(parents=True, exist_ok=True)
-    asyncio.run(_run_map_only(repo_path.resolve(), findings_root, config))
+    asyncio.run(_run_map_only(repo_path.resolve(), findings_root, config, api_key, base_url))
 
 
-async def _run_map_only(repo_root, findings_root, config):
-    client = _get_client()
+async def _run_map_only(repo_root, findings_root, config, api_key=None, base_url=None):
+    client = _get_client(api_key, base_url)
     source_files = collect_source_files(repo_root)
     skeleton_text = build_skeleton(repo_root, source_files)
     tasks = build_queue(repo_root, findings_root, config.changed_only, config.base_ref)
@@ -283,18 +290,20 @@ async def _run_map_only(repo_root, findings_root, config):
 
 @cli.command("reduce")
 @click.argument("findings_dir", type=click.Path(exists=True, file_okay=False, path_type=Path))
-@click.option("--model", default="claude-sonnet-4-6", show_default=True)
+@click.option("--model", default="gemma3:4b", show_default=True)
+@click.option("--base-url", default=None)
+@click.option("--api-key", default=None)
 @click.option("--verbose", "-v", is_flag=True)
-def reduce_cmd(findings_dir, model, verbose):
+def reduce_cmd(findings_dir, model, base_url, api_key, verbose):
     """Run the reduce phase on an existing findings directory."""
     if verbose:
         logging.getLogger("garlicpress").setLevel(logging.INFO)
     config = Config(reduce_model=model)
-    asyncio.run(_run_reduce_only(findings_dir.resolve(), config))
+    asyncio.run(_run_reduce_only(findings_dir.resolve(), config, api_key, base_url))
 
 
-async def _run_reduce_only(findings_root, config):
-    client = _get_client()
+async def _run_reduce_only(findings_root, config, api_key=None, base_url=None):
+    client = _get_client(api_key, base_url)
     summaries = await reduce_tree(findings_root, client, config)
     contradictions = sum(len(s.contradictions) for s in summaries)
     console.print(f"[green]Reduce complete[/green] — {len(summaries)} dirs, {contradictions} contradictions")
@@ -303,18 +312,20 @@ async def _run_reduce_only(findings_root, config):
 @cli.command("swap")
 @click.argument("findings_dir", type=click.Path(exists=True, file_okay=False, path_type=Path))
 @click.option("--spec", "-s", "spec_files", multiple=True, required=True)
-@click.option("--model", default="claude-sonnet-4-6", show_default=True)
+@click.option("--model", default="gemma3:4b", show_default=True)
+@click.option("--base-url", default=None)
+@click.option("--api-key", default=None)
 @click.option("--verbose", "-v", is_flag=True)
-def swap_cmd(findings_dir, spec_files, model, verbose):
+def swap_cmd(findings_dir, spec_files, model, base_url, api_key, verbose):
     """Run Agent B swap against existing reduced findings."""
     if verbose:
         logging.getLogger("garlicpress").setLevel(logging.INFO)
     config = Config(swap_model=model, spec_files=list(spec_files))
-    asyncio.run(_run_swap_only(findings_dir.resolve(), config))
+    asyncio.run(_run_swap_only(findings_dir.resolve(), config, api_key, base_url))
 
 
-async def _run_swap_only(findings_root, config):
-    client = _get_client()
+async def _run_swap_only(findings_root, config, api_key=None, base_url=None):
+    client = _get_client(api_key, base_url)
     spec_paths = [Path(s) for s in config.spec_files]
     report = await run_swap(findings_root, spec_paths, client, config)
     if report:

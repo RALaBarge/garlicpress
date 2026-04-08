@@ -33,19 +33,19 @@ class Traceability(BaseModel):
 
 
 class Finding(BaseModel):
-    finding_id: str  # e.g. "proxy-001" — file abbreviation + sequence
-    severity: Severity
-    type: FindingType
-    location: str  # "ClassName.method_name:L312" or "module:L42"
-    description: str
-    evidence: str  # verbatim or quoted code snippet supporting the finding
-    traceability: Traceability
+    finding_id: str = ""
+    severity: Severity = Severity.info
+    type: FindingType = FindingType.other
+    location: str = ""
+    description: str = ""
+    evidence: str = ""
+    traceability: Traceability | None = None
 
 
 class ImplicitAssumption(BaseModel):
     assumption: str
-    confidence: str  # "high" | "medium" | "low" — how confident the agent is this assumption exists
-    risk: str        # free text — what breaks if the assumption is violated
+    confidence: str = "medium"  # "high" | "medium" | "low"
+    risk: str = ""              # what breaks if the assumption is violated
 
 
 class DependencyChange(BaseModel):
@@ -69,12 +69,12 @@ class FileFindingsReport(BaseModel):
 
 class Contradiction(BaseModel):
     """A cross-file assumption conflict detected during reduce."""
-    severity: Severity
-    file_a: str
-    assumption: str       # what file_a assumed
-    file_b: str
-    actual_behavior: str  # what file_b actually does
-    description: str
+    severity: Severity = Severity.medium
+    file_a: str = ""
+    assumption: str = ""       # what file_a assumed
+    file_b: str = ""
+    actual_behavior: str = ""  # what file_b actually does
+    description: str = ""
     finding_ids: list[str] = Field(default_factory=list)
 
 
