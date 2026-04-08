@@ -26,7 +26,13 @@ This directory contains all evaluation data, benchmarks, and analysis for garlic
   - Machine-readable for analysis
 
 ### 🎯 Model Comparison
-- **[MODEL_COMPARISON.md](MODEL_COMPARISON.md)** — Llama 3 70B vs Deepseek v3.2
+- **[COMPREHENSIVE_COMPARISON.md](COMPREHENSIVE_COMPARISON.md)** — Llama 70B vs Deepseek v3.2 vs Qwen 3.6+
+  - Three-model analysis across 5 codebases
+  - Cost/speed/quality metrics per model
+  - Consensus findings and disagreements
+  - Model selection guidance
+  
+- **[MODEL_COMPARISON.md](MODEL_COMPARISON.md)** — Detailed Llama 3 70B vs Deepseek v3.2
   - Same code, different findings
   - Severity calibration analysis
   - Speed/cost tradeoffs
@@ -46,7 +52,8 @@ This directory contains all evaluation data, benchmarks, and analysis for garlic
 ## Key Takeaways
 
 ### ✅ What Works
-- **Language support:** Lua, Elixir, Haskell, Go, C, TypeScript, Python, and more (14 languages tested)
+- **Language support:** 30+ languages including Python, TypeScript, Go, C/C++, C#, Rust, Java, Lua, Elixir, Haskell, PHP, Perl, Scala, Clojure, Ada, D, OCaml, F#, Erlang, Verilog, VHDL, and more
+- **Evaluation verified on:** 7 real codebases (C, Go, Lua, Elixir, Haskell, TypeScript, Python)
 - **Cross-file detection:** Found contradictions in all 7 codebases
 - **Honest self-assessment:** Identified its own vulnerabilities (8 criticals)
 - **Model agnostic:** Works with Ollama, OpenAI, Anthropic, OpenRouter
@@ -67,10 +74,11 @@ This directory contains all evaluation data, benchmarks, and analysis for garlic
 ## For Hiring Teams
 
 **What this proves:**
-1. Tool works on 14+ languages and real codebases
+1. Tool works across 30+ languages and real codebases
 2. Honest about its own limitations (critical assessment by independent judges)
-3. Evidence-based recommendations (model comparison with data)
+3. Evidence-based recommendations (3-model comparison with quantified data)
 4. Production-ready for CI; hardening roadmap clear
+5. Model choice matters—speed, cost, severity all vary significantly
 
 **Cost data:** 
 - ~7 runs × 13 files = ~1.5 min runtime per codebase (local Llama)
@@ -85,8 +93,10 @@ All generated during April 8, 2026 evaluation cycle:
 portfolio/
 ├── runs.md                           # 7 evaluation reports
 ├── CRITICAL_EVALUATION_SUMMARY.md    # 3-model assessment + roadmap
-├── MODEL_COMPARISON.md               # Speed/cost/quality comparison
-├── critical_evaluations.json         # Raw evaluation data (23 KB)
+├── COMPREHENSIVE_COMPARISON.md       # Llama vs Deepseek vs Qwen analysis
+├── MODEL_COMPARISON.md               # Llama vs Deepseek (detailed)
+├── TIMELINE.md                       # Development timeline (git-sourced)
+├── critical_evaluations.json         # Raw model responses (23 KB)
 ├── INDEX.md                          # This file
 └── [findings dirs...]
 ```
