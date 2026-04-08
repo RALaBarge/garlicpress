@@ -213,18 +213,21 @@ garlicpress ran its own analyzer on itself. Three independent LLMs (Deepseek v3.
 
 ### Model Comparison
 
-Same codebase (garlicpress), two different LLM backends:
+**8-model fix validation** — Same 5 critical issues, reviewed by diverse LLM backends:
 
-| Severity | Llama 70B | Deepseek v3.2 |
-|----------|-----------|---------------|
-| **Critical** | 8 | 0 |
-| **High** | 3 | 5 |
-| **Medium** | 6 | 22 |
-| **Low** | 0 | 30 |
+| Issue | Fix | GPT-5.4-nano | Gemini 3.1-Lite | GLM-5v-turbo | GPT-OSS-120b | Qwen 3.2-235B | GPT-4o-mini | Gemini 2.0-Flash | Trinity-Large |
+|-------|-----|---|---|---|---|---|---|---|---|
+| **#1: queue.py race condition** | threading.Lock | ✅ | ✅ | ❌ | ✅ | ✅ | ✅ | ✅ | ❌ |
+| **#2: reduce.py empty-state crash** | guard `if not findings` | ✅ | ✅ | ❌* | ✅ | ✅ | ✅ | ✅ | ❌ |
+| **#3: config.py silent fail** | validate prompts_dir | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ |
+| **#4: webamp SQL injection** | parameterized queries | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| **#5: webamp hardcoded keys** | env vars | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 
-**Key insight:** Llama is better at severity (4x faster, conservative). Deepseek is more thorough (catches design gaps). For production, use both.
+**Results:** 37/40 successful responses (92.5%)  
+**Best performers:** GPT-OSS-120b (5/5), Qwen 3.2 (5/5), Gemini models (all syntax valid)  
+**Key insight:** Fixes are straightforward; all models converge on same solutions. Trinity had backend errors on garlicpress fixes but succeeded on webamp.
 
-**Details:** [`portfolio/MODEL_COMPARISON.md`](portfolio/MODEL_COMPARISON.md)
+**Full analysis:** [`portfolio/TRINITY_ANALYSIS.md`](portfolio/TRINITY_ANALYSIS.md) (recalibration + missed patterns) and [`portfolio/COMPREHENSIVE_COMPARISON.md`](portfolio/COMPREHENSIVE_COMPARISON.md) (3-model analysis)
 
 ### What This Proves
 
