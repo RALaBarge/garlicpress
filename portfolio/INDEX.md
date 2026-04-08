@@ -32,6 +32,13 @@ This directory contains all evaluation data, benchmarks, and analysis for garlic
   - Speed/cost tradeoffs
   - Model recommendations (local vs cloud)
 
+### 📅 Development Timeline
+- **[TIMELINE.md](TIMELINE.md)** — Real timeline sourced from git history
+  - April 7, 11:25 — Init
+  - April 7, 21:12 — v1.0 (10 hours later)
+  - April 7-8 — Evaluation & validation of 7 codebases across 3 LLM backends
+  - All facts verifiable in repository commits and data files
+
 ### 📁 Raw Findings
 - `findings_self/` — garlicpress self-eval with Llama 3 70B (local)
 - `findings_deepseek/` — garlicpress self-eval with Deepseek v3.2 (OpenRouter)
