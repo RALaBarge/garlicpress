@@ -57,6 +57,14 @@ This directory contains all evaluation data, benchmarks, and analysis for garlic
   - April 7-8 — Evaluation & validation of 7 codebases across 3 LLM backends
   - All facts verifiable in repository commits and data files
 
+### 🔧 PR-Ready Fix Reports
+- **[PR_READY_FIXES.md](PR_READY_FIXES.md)** — Executive summary of all 5 fixes
+- **[FIX_1_queue.py.md](FIX_1_queue.py.md)** — Thread-safe file collection (8-model review)
+- **[FIX_2_reduce.py.md](FIX_2_reduce.py.md)** — Handle empty findings list (8-model review)
+- **[FIX_3_config.py.md](FIX_3_config.py.md)** — Validate prompts_dir (8-model review)
+- **[FIX_4_webamp migrations.md](FIX_4_webamp%20migrations.md)** — SQL injection prevention (8-model review)
+- **[FIX_5_webamp algolia.ts.md](FIX_5_webamp%20algolia.ts.md)** — Move secrets to environment (8-model review)
+
 ### 📁 Raw Findings
 - `findings_self/` — garlicpress self-eval with Llama 3 70B (local)
 - `findings_deepseek/` — garlicpress self-eval with Deepseek v3.2 (OpenRouter)
