@@ -8,7 +8,7 @@
 |------|----------|-------|----------|---------------|-----------|
 | **andsh** | C | 4 | 0/0/0/0 | 0/3/4/1 | 0/2/2/1 |
 | **lua-projects** | Lua | 9 | 1/2/2/1 | 4/16/12/7 | 0/0/0/0 |
-| **elixir-portal** | Elixir | 5 | 1/1/3/2 | 0/2/1/2 | — |
+| **elixir-portal** | Elixir | 5 | 1/1/3/2 | 0/2/1/2 | 0/0/1/1 |
 | **haskell-examples** | Haskell | 12 | 1/5/9/0 | 0/3/0/0 | — |
 | **resume** | Go | 1 | 0/1/1/0 | 0/1/2/3 | 0/1/2/2 |
 
@@ -61,9 +61,9 @@
 |-------|----------|-----------|
 | **Llama** | 7 (1C/1H/3M/2L) | Identified dependency handling gap |
 | **Deepseek** | 5 (0C/2H/1M/2L) | Found resource management issues |
-| **Qwen** | — | Not evaluated |
+| **Qwen** | 3 (0C/0H/1M/1L) | Minimal findings, likely underfitting |
 
-**Verdict:** Both found different issues—Llama caught architectural (mix.exs), Deepseek caught operational (resource handling).
+**Verdict:** Llama caught architectural issues (mix.exs dependency validation). Deepseek caught operational issues (resource handling). Qwen under-analyzed. **Consensus:** Llama's critical finding (dependencies) is valid.
 
 #### haskell-examples (Haskell, 12 files)
 | Model | Findings | Assessment |
