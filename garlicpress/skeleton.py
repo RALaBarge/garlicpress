@@ -116,6 +116,39 @@ _PATTERNS = {
     ".go": re.compile(r"^func\s+\w+|^type\s+\w+\s+struct", re.M),
     ".rs": re.compile(r"^pub\s+(?:async\s+)?fn\s+\w+|^pub\s+struct\s+\w+", re.M),
     ".java": re.compile(r"^\s*(?:public|private|protected)\s+.*\w+\s*\(", re.M),
+    # C / C++
+    ".c": re.compile(r"^(?:static\s+|inline\s+|extern\s+)?[\w\*][\w\s\*]+\s+\w+\s*\([^;)]*\)\s*(?:\{|$)", re.M),
+    ".h": re.compile(r"^(?:typedef\s+)?(?:struct|enum|union)\s+\w+|^(?:static\s+|inline\s+|extern\s+)?[\w\*][\w\s\*]+\s+\w+\s*\([^;)]*\)\s*;", re.M),
+    ".cpp": re.compile(r"^(?:[\w:~\*]+\s+)+[\w:~]+\s*\([^;)]*\)\s*(?:const\s*)?(?:\{|$)", re.M),
+    # Shell
+    ".sh": re.compile(r"^(?:function\s+\w+|\w+\s*\(\))\s*\{", re.M),
+    # Ruby
+    ".rb": re.compile(r"^\s*def\s+\w+", re.M),
+    # Swift / Kotlin
+    ".swift": re.compile(r"^\s*(?:public\s+|private\s+|internal\s+|open\s+)?func\s+\w+", re.M),
+    ".kt": re.compile(r"^\s*(?:fun\s+\w+|class\s+\w+|object\s+\w+)", re.M),
+    # Fortran
+    ".f90": re.compile(r"^\s*(?:subroutine|function|module|program)\s+\w+", re.M | re.I),
+    ".f95": re.compile(r"^\s*(?:subroutine|function|module|program)\s+\w+", re.M | re.I),
+    ".f": re.compile(r"^\s*(?:subroutine|function|program)\s+\w+", re.M | re.I),
+    # Julia
+    ".jl": re.compile(r"^\s*(?:function|macro|struct|abstract\s+type|mutable\s+struct)\s+\w+", re.M),
+    # R
+    ".r": re.compile(r"^\s*\w+\s*<-\s*function\s*\(", re.M),
+    ".R": re.compile(r"^\s*\w+\s*<-\s*function\s*\(", re.M),
+    # MATLAB / Octave
+    ".m": re.compile(r"^\s*function\s+.*=?\s*\w+\s*\(", re.M),
+    # Zig
+    ".zig": re.compile(r"^\s*(?:pub\s+)?fn\s+\w+|^\s*(?:pub\s+)?const\s+\w+\s*=\s*struct", re.M),
+    # Nim
+    ".nim": re.compile(r"^\s*(?:proc|func|method|macro|template|type)\s+\w+", re.M),
+    # Haskell
+    ".hs": re.compile(r"^[a-z]\w*\s*::", re.M),
+    # Lua
+    ".lua": re.compile(r"^\s*(?:local\s+)?function\s+[\w.]+\s*\(", re.M),
+    # Elixir
+    ".ex": re.compile(r"^\s*(?:def|defp|defmodule|defmacro)\s+\w+", re.M),
+    ".exs": re.compile(r"^\s*(?:def|defp|defmodule|defmacro)\s+\w+", re.M),
 }
 
 def _generic_signatures(path: Path) -> list[str]:
@@ -134,7 +167,10 @@ def _generic_signatures(path: Path) -> list[str]:
 # ---------------------------------------------------------------------------
 
 SKIP_DIRS = {".git", "__pycache__", ".venv", "venv", "node_modules", "dist", "build", ".mypy_cache", ".claude", "findings", "skills"}
-INCLUDE_EXTENSIONS = {".py", ".ts", ".js", ".go", ".rs", ".java"}
+INCLUDE_EXTENSIONS = {".py", ".ts", ".js", ".go", ".rs", ".java",
+                      ".c", ".h", ".cpp", ".cc", ".cxx",
+                      ".sh", ".bash",
+                      ".rb", ".swift", ".kt"}
 
 
 def collect_source_files(repo_root: Path) -> list[Path]:
