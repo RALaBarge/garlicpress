@@ -14,7 +14,15 @@ from __future__ import annotations
 import ast
 import re
 import subprocess
+import threading
 from pathlib import Path
+
+
+# ---------------------------------------------------------------------------
+# Thread safety for concurrent file collection
+# ---------------------------------------------------------------------------
+
+_collect_files_lock = threading.Lock()
 
 
 # ---------------------------------------------------------------------------
