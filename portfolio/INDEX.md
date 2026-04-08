@@ -2,6 +2,12 @@
 
 This directory contains all evaluation data, benchmarks, and analysis for garlicpress as a production code review tool.
 
+## 🎯 START HERE
+
+**[COMPLETE_RESULTS.md](COMPLETE_RESULTS.md)** — All testing results on one page (12 models, 2,753 API calls, all metrics, all findings)
+
+---
+
 ## Quick Navigation
 
 ### 📊 Evaluations & Results
