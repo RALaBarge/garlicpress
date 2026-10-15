@@ -273,4 +273,4 @@ garlicpress run /repo --spec CLAUDE.md --spec .allium
 
 ## License
 
-MIT
+[MIT](LICENSE).
